@@ -50,6 +50,11 @@ export class Simulation{
   }
   // El defensa del lado de su portería puede salir a cortar un tiro, nunca a perseguir un balón inofensivo.
   if(threat&&rank===1&&state.opponent.position[2]<ball.position[2]+1&&distance(state.opponent.position,ball.position)<21)state.targetOverride=null;
+  // Quien espera en su sitio no se queda parado: aprovecha para recoger turbo cerca de su posición.
+  if(rank>0&&state.targetOverride&&self.boost<75){
+   const here=state.opponent.position,spot=state.targetOverride,pad=state.pads.filter(p=>p.active&&distance(p.position,here)<26).sort((a,b)=>distance(a.position,spot)-distance(b.position,spot)+(b.isBig?5:0)-(a.isBig?5:0))[0];
+   if(pad)state.targetOverride=[pad.position[0],0,pad.position[2]];
+  }
   return state;
  }
  // Casual / entrenamiento: el conductor por reglas de siempre.

@@ -20,6 +20,8 @@ export class RankedBrain{
   this.clock+=dt;this.switched=false;const w=this.weights();
   if(w.nexto>=.999){if(this.driver!=='nexto'){this.driver='nexto';this.switched=true}return this.driver}
   const settled=!!car&&car.onGround&&!car.isFlipping&&!car.isDemoed;
+  // Pegado a una pared o boca abajo: el conductor sencillo no sabe salir, así que lo hace el de reglas.
+  if(car&&car.onGround&&car.up&&car.up.y<.6&&w.nexto<.999){if(this.driver!=='rules')this.switched=true;this.driver='rules';this.until=this.clock+1.5;return this.driver}
   if(this.driver&&(this.clock<this.until||!settled&&this.clock<this.until+4))return this.driver;
   // Los tramos de Nexto duran más; se compensa para que el TIEMPO total repartido coincida con los pesos.
   const a=w.basic/TRAMO.basic,b=w.rules/TRAMO.rules,c=w.nexto/TRAMO.nexto,roll=Math.random()*(a+b+c);

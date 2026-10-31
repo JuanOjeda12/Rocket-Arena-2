@@ -15,7 +15,7 @@ export function botRankFromSkill(skill){const s=clamp(Number(skill)||0,0,1);if(s
 export const TIERS={
  //                   Bronce Plata  Oro   Plat  Diam  Camp  GC    SSL
  // Qué conductor usa cada bot (porcentaje de tiempo). El resto es el conductor por reglas.
- basicWeight:       [1,     1,     .30,  0,    0,    0,    0,    0],   // conductor sencillo
+ basicWeight:       [1,     1,     .10,  0,    0,    0,    0,    0],   // conductor sencillo
  nextoWeight:       [0,     0,     0,    0,    0,    .18,  .55,  1],   // IA Nexto (solo rangos altos)
  // Conductor por reglas (OpponentAI): velocidad de reacción y calidad de ejecución.
  think:             [.30,   .24,   .17,  .12,  .09,  .068, .052, .045], // segundos entre decisiones
@@ -25,10 +25,10 @@ export const TIERS={
  jumpHeight:        [2.4,   2.6,   2.8,  3.2,  4.5,  6.5,  9,    12],     // altura máxima que intenta alcanzar
  boostAngle:        [.18,   .20,   .22,  .25,  .30,  .35,  .40,  .45],   // cuánto apunta antes de usar turbo
  // "Factor humano": errores que se aplican encima de cualquier conductor.
- noise:             [.30,   .22,   .15,  .10,  .06,  .035, .015, 0],     // temblor de la dirección
- lapseRate:         [.30,   .22,   .14,  .09,  .055, .03,  .012, 0],     // despistes por segundo
+ noise:             [.30,   .22,   .11,  .10,  .06,  .035, .015, 0],     // temblor de la dirección
+ lapseRate:         [.30,   .22,   .10,  .09,  .055, .03,  .012, 0],     // despistes por segundo
  lapseTime:         [.55,   .45,   .35,  .28,  .22,  .18,  .15,  0],     // duración de cada despiste (s)
- boostUse:          [.35,   .50,   .65,  .78,  .88,  .95,  1,    1]      // fracción del turbo que realmente usa
+ boostUse:          [.45,   .62,   .85,  .92,  .96,  .95,  1,    1]      // fracción del turbo que realmente usa
 };
 const at=(table,rank)=>{const t=clamp(Number(rank)||0,0,7),i=Math.min(6,Math.floor(t));return table[i]+(table[i+1]-table[i])*(t-i)};
 export const tierValue=(name,skill)=>at(TIERS[name],botRankFromSkill(skill));
