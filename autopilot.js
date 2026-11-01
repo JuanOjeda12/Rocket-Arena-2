@@ -11,3 +11,12 @@ export function drive(car,tx,tz,opts={}){
  const throttle=speed<want?1:speed>want+6?-.4:.3;
  return{throttle,steer,pitch:0,yaw:0,roll:0,jump:false,boost:!!opts.boost&&Math.abs(err)<.3&&car.boost>5,handbrake:false};
 }
+// Dispara al balón hacia la portería (gx,gz): primero se coloca detrás del balón y luego embiste.
+export function shoot(car,ball,gx,gz,opts={}){
+ const bx=ball[0],bz=ball[2],dx=gx-bx,dz=gz-bz,l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l;
+ const ax=bx-ux*6,az=bz-uz*6;
+ // ¿está ya detrás del balón y alineado con la portería?
+ const rx=car.position[0]-bx,rz=car.position[2]-bz,behind=rx*ux+rz*uz<-2,lateral=Math.abs(rx*uz-rz*ux);
+ const target=behind&&lateral<5?[bx+ux*3,bz+uz*3]:[ax,az];
+ return drive(car,target[0],target[1],{speed:opts.speed??13,boost:false});
+}
