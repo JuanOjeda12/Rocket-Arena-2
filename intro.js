@@ -38,6 +38,13 @@ const STYLE=`
 @keyframes cnt{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
 #intro .title{position:absolute;left:50%;bottom:19vh;transform:translateX(-50%);font:700 clamp(15px,2vw,26px) Barlow,Arial,sans-serif;letter-spacing:.5em;color:#cfe9ff;text-shadow:0 0 18px #2a7bff;opacity:0;transition:opacity .7s}
 #intro .title.on{opacity:1}
+#intro .bar{display:none}
+#intro .skip{bottom:14px}
+#intro .card{position:absolute;left:50%;transform:translate(-50%,-50%);opacity:0;text-align:center}
+#intro .card svg{display:block;width:100%;height:auto}
+#intro .studio{top:50%;width:min(36vw,460px)}
+#intro .titlecard{top:34%;width:min(54vw,740px)}
+#intro .press{margin-top:2.4vh;font:600 clamp(11px,1.2vw,18px) Barlow,Arial,sans-serif;letter-spacing:.2em;color:#6fd7f2;text-shadow:0 0 10px #1a8fb0;opacity:0}
 `;
 const smooth=x=>{x=Math.min(1,Math.max(0,x));return x*x*(3-2*x)};
 const ramp=(t,a,b)=>smooth((t-a)/(b-a));
@@ -50,7 +57,7 @@ function track(keys,t){
  const cr=(k)=>{const p0=a[k],p1=b[k],p2=c[k],p3=d[k];return p1.map((_,j)=>.5*((2*p1[j])+(-p0[j]+p2[j])*u+(2*p0[j]-5*p1[j]+4*p2[j]-p3[j])*u*u+(-p0[j]+3*p1[j]-3*p2[j]+p3[j])*u*u*u))};
  return{p:cr('p'),l:cr('l'),f:lerp(b.f,c.f,smooth(u))};
 }
-const TIMELINE={ignite:.9,towers:.62,city:3.1,neon:4.4,walls:4.6,paint:6.2,goals:7.2,pads:7.0,sign:9.0,blue:13.4,orange:16.4,octane:19.4,count:23.5,kick:26.0,end:0};
+const TIMELINE={ignite:.2,towers:.1,city:.4,neon:.5,walls:.5,paint:.7,goals:.7,pads:.7,logoOut:1.95,title:2.0,black:4.4,aerial:9.5,sign:10.8,octane:12.9,count:17.0,kick:19.6,end:0};
 const SIGN={x:0,y:17,z:-61};
 function makeSign(scene){
  const c=document.createElement('canvas');c.width=1024;c.height=300;const x=c.getContext('2d');
@@ -58,9 +65,9 @@ function makeSign(scene){
  const g=x.createLinearGradient(0,0,0,300);g.addColorStop(0,'#0a2a5a');g.addColorStop(1,'#040a16');x.fillStyle=g;x.fillRect(0,0,1024,300);
  x.strokeStyle='#38b6ff';x.lineWidth=8;x.shadowColor='#2fa8ff';x.shadowBlur=26;x.strokeRect(16,16,992,268);
  x.textAlign='center';x.textBaseline='middle';x.font="italic 900 138px 'Barlow Condensed','Arial Black',Impact,sans-serif";
- x.shadowBlur=36;x.fillStyle='#d6f2ff';x.fillText('ROCKET ARENA',512,128,900);x.shadowBlur=14;x.fillText('ROCKET ARENA',512,128,900);
+ x.shadowBlur=36;x.fillStyle='#d6f2ff';x.fillText('OVERTIME',512,150,900);x.shadowBlur=14;x.fillText('OVERTIME',512,150,900);
  x.font="700 40px Barlow,Arial,sans-serif";x.shadowColor='#ff9a2e';x.shadowBlur=18;x.fillStyle='#ffc070';
- try{x.letterSpacing='16px'}catch{}x.fillText('ENTRENAMIENTO',512,238);
+ 
  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=4;
  const group=new T.Group();
  const board=new T.Mesh(new T.PlaneGeometry(30,8.8),new T.MeshBasicMaterial({map:tex,toneMapped:false}));group.add(board);
@@ -84,33 +91,33 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  const labelOf=keyLabel;
  if(!document.getElementById('intro-style')){const s=document.createElement('style');s.id='intro-style';s.textContent=STYLE;document.head.append(s)}
  const root=document.createElement('div');root.id='intro';root.hidden=true;
- root.innerHTML=`<div class="fade"></div><div class="vignette"></div><div class="flash"></div><div class="dim"></div><div class="prompt"></div><div class="ready">PREPÁRATE PARA DEFENDER</div><div class="goalword">GOAL!</div><div class="count"></div><div class="black"></div><div class="logo">${logoSVG({id:'intro',tagline:true})}</div><div class="bar top"></div><div class="bar bottom"></div><div class="skip"><kbd>ENTER</kbd> Saltar introducción</div>`;
+ root.innerHTML=`<div class="fade"></div><div class="card studio">${logoSVG({id:'introS',tagline:true})}</div><div class="card titlecard">${logoSVG({id:'introT',tagline:false})}<div class="press">PRESIONA CUALQUIER BOTÓN PARA INICIAR</div></div><div class="vignette"></div><div class="flash"></div><div class="dim"></div><div class="prompt"></div><div class="ready">PREPÁRATE PARA DEFENDER</div><div class="goalword">GOAL!</div><div class="count"></div><div class="black"></div><div class="logo">${logoSVG({id:'intro',tagline:true})}</div><div class="bar top"></div><div class="bar bottom"></div><div class="skip"><kbd>ENTER</kbd> Saltar introducción</div>`;
  document.body.append(root);
- const fade=root.querySelector('.fade'),flash=root.querySelector('.flash'),count=root.querySelector('.count'),dim=root.querySelector('.dim'),promptEl=root.querySelector('.prompt'),black=root.querySelector('.black'),logo=root.querySelector('.logo');
+ const fade=root.querySelector('.fade'),flash=root.querySelector('.flash'),count=root.querySelector('.count'),dim=root.querySelector('.dim'),promptEl=root.querySelector('.prompt'),black=root.querySelector('.black'),logo=root.querySelector('.logo'),studio=root.querySelector('.studio'),titlecard=root.querySelector('.titlecard'),press=root.querySelector('.press');
  let hold=false,fans=null,vehicle=null,orange=null,sign=null,bursts=null,padStates=null,pads=null,t=0,active=false,resolve=null,sounds=new Set(),savedFov=65,fired=new Set(),lastCount=0;
  const power=()=>stadium.power,decor=()=>stadium.decorPower;
  const night=()=>{stadium.update(0,false,true,t);const k=.1+.9*Math.min(1,power().flood*1.15);if(rig){rig.hemisphere.intensity*=k;rig.sun.intensity*=k}scene.environmentIntensity*=k};
  function sound(key,fn){if(sounds.has(key))return;sounds.add(key);try{fn()}catch{}}
  function once(key,fn){if(fired.has(key))return;fired.add(key);fn()}
+ function soft(key,fn){if(t<TIMELINE.aerial){sounds.add(key);return}sound(key,fn)}
  function lights(){
   const P=power(),D=decor(),T0=TIMELINE;let sum=0;
-  P.towers.forEach((_,i)=>{const s=T0.ignite+i*T0.towers,k=Math.min(1,Math.max(0,(t-s)/.9));let v=smooth(k);if(k>0&&k<1)v*=Math.sin(t*95+i*7)>-.15?1:.25;P.towers[i]=t<s?0:v;sum+=P.towers[i];if(t>=s)sound('tw'+i,()=>{audio.tone(70+i*9,.5,.34,'square',38);audio.noise(.35,.28,3200)})});
+  P.towers.forEach((_,i)=>{const s=T0.ignite+i*T0.towers,k=Math.min(1,Math.max(0,(t-s)/.9));let v=smooth(k);if(k>0&&k<1)v*=Math.sin(t*95+i*7)>-.15?1:.25;P.towers[i]=t<s?0:v;sum+=P.towers[i];if(t>=s)soft('tw'+i,()=>{audio.tone(70+i*9,.5,.34,'square',38);audio.noise(.35,.28,3200)})});
   P.flood=Math.max(.04,sum/P.towers.length);P.city=ramp(t,T0.city,T0.city+2.2);P.neon=ramp(t,T0.neon,T0.neon+1.8);
   D.wall=ramp(t,T0.walls,T0.walls+3.2);D.paint=ramp(t,T0.paint,T0.paint+1.8);D.goal=ramp(t,T0.goals,T0.goals+1.4);
-  if(t>=T0.neon)sound('sweep',()=>audio.tone(180,3.4,.09,'sawtooth',1700));
-  padStates?.forEach((s,i)=>{s.active=t>T0.pads+(i%7)*.13+Math.floor(i/7)*.09});
+  if(t>=T0.neon)soft('sweep',()=>audio.tone(180,3.4,.09,'sawtooth',1700));
+  padStates?.forEach((s,i)=>{s.active=t>T0.pads+(i%7)*.13+Math.floor(i/7)*.09&&!(t>=T0.octane&&t<T0.count)});
   pads?.update(padStates,t);
  }
  const WIDE=[
-  {t:0,p:[-92,52,108],l:[0,6,10],f:46},{t:3.2,p:[-72,46,86],l:[0,4,6],f:48},{t:6.5,p:[-20,95,52],l:[0,0,6],f:52},
-  {t:9.0,p:[30,80,40],l:[0,8,-20],f:50}
+  {t:9.4,p:[-46,17,46],l:[-4,5,6],f:62},{t:9.8,p:[-40,16,38],l:[0,5,0],f:62},{t:10.4,p:[-30,15,28],l:[8,4,-10],f:60},{t:10.9,p:[-22,14,18],l:[12,4,-20],f:60}
  ];
  function aerial(){const k=track(WIDE,t);camera.position.set(...k.p);camera.up.set(0,1,0);camera.lookAt(...k.l);camera.fov=k.f}
  // Cartel de neón con fuegos artificiales (como el cartel OVERTIME del vídeo).
  function signShot(){
-  const T0=TIMELINE,k=(t-T0.sign)/(T0.blue-T0.sign);
+  const T0=TIMELINE,k=(t-T0.sign)/(T0.octane-T0.sign);
   camera.position.set(lerp(-6,3,smooth(k)),lerp(8,13,smooth(k)),lerp(-4,-12,smooth(k)));camera.up.set(0,1,0);camera.lookAt(SIGN.x,SIGN.y-1,SIGN.z);camera.fov=lerp(62,54,smooth(k));
-  const times=[0,.45,.95,1.4,1.9,2.5,3.1],cols=[[.4,.8,1],[1,.6,.2],[1,1,1],[.5,.9,1],[1,.5,.15],[.7,.8,1],[1,.8,.4]];
+  const times=[0,.3,.65,1,1.35,1.7,1.95],cols=[[.4,.8,1],[1,.6,.2],[1,1,1],[.5,.9,1],[1,.5,.15],[.7,.8,1],[1,.8,.4]];
   times.forEach((tm,i)=>{if(t-T0.sign>=tm)once('fw'+i,()=>{const sx=(i%2?1:-1)*(10+i*2),c=[SIGN.x+sx,SIGN.y+9+(i%3)*3,SIGN.z+4];bursts.add(c,cols[i],150,13,2.2);audio.noise(.5,.3,2200);audio.tone(120,.4,.15,'sawtooth',40)})});
  }
  function fanShot(section,start,len){
@@ -126,10 +133,10 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   ball.visible=false;ballShadow.visible=false;
   if(s<half){
    const k=s/half;place(vehicle,3,.17+Math.sin(t*2.2)*.01,24,Math.PI+.5);orange.setVisible(false,false);
-   camera.position.set(lerp(-1.6,-.4,k),.55,30);camera.up.set(0,1,0);camera.lookAt(3,.7,24);camera.fov=lerp(46,40,k);
+   camera.position.set(lerp(1.6,3.2,k),.5,28.6);camera.up.set(0,1,0);camera.lookAt(3,.65,24);camera.fov=lerp(52,46,k);
   }else{
    const k=(s-half)/(T0.count-T0.octane-half);place(orange,-3,.17+Math.sin(t*2.4)*.01,-22,0);vehicle.setVisible(false,false);
-   camera.position.set(lerp(1.2,3.4,k),.8,lerp(-12.5,-13.5,k));camera.up.set(0,1,0);camera.lookAt(-3,.9,-22);camera.fov=lerp(50,44,k);
+   camera.position.set(lerp(-.2,1.2,k),.8,lerp(-16.4,-17.4,k));camera.up.set(0,1,0);camera.lookAt(-3,.9,-22);camera.fov=lerp(56,50,k);
   }
  }
  // Cuenta atrás 3-2-1 con el balón en el centro y los dos coches esperando.
@@ -138,122 +145,140 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   ball.visible=true;ballShadow.visible=true;ball.position.set(0,.9125,0);ballShadow.position.set(0,.015,0);
   vehicle.setVisible(false,false);orange.setVisible(false,false);
   camera.position.set(lerp(-6,6,smooth(k)),lerp(.7,.9,k),lerp(7.5,6.5,k));camera.up.set(0,1,0);camera.lookAt(0,1.2,0);camera.fov=lerp(46,40,k);
-  const n=3-Math.floor(s/((T0.kick-T0.count)/3));
-  if(n>=1&&n!==lastCount){lastCount=n;count.textContent=n;count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');audio.tone(n===1?880:660,.35,.28,'sine')}
  }
  // Saque: los dos coches con turbo contra el balón y explosión.
- // ───────── Cinemática guionizada (partido de bienvenida) ─────────
- // Todo está animado por guion: el jugador solo desbloquea cada aviso; no puede desviar coches ni balón.
- const L=(a,b,k)=>a+(b-a)*k,E=smooth,yawOf=(dx,dz)=>Math.atan2(-dx,-dz);
- const clamp01=k=>Math.min(1,Math.max(0,k));
+ // Cuenta atrás 3-2-1 (16.9 / 17.9 / 18.9 s del vídeo); el 3 ya aparece sobre el último plano del coche naranja.
+ function digit(){const n=t<16.9||t>=TIMELINE.kick?0:t<17.9?3:t<18.9?2:1;if(n&&n!==lastCount){lastCount=n;count.textContent=n;count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');audio.tone(n===1?880:660,.35,.28,'sine')}}
+ // Pantalla de título (2.4–4.4 s del vídeo): cámara baja ante la pared de marcador y el balón en primer plano.
+ function titleShot(){const k=Math.min(1,Math.max(0,(t-2.0)/2.4));ball.visible=true;ballShadow.visible=true;ball.position.set(5.5,.9125,10);ballShadow.position.set(5.5,.015,10);ballShadow.material.opacity=.22;[B,O,D,W].forEach(a=>a?.setVisible(false,false));camera.position.set(lerp(-5,-3,k),lerp(1.3,1.6,k),lerp(20,17,k));camera.up.set(0,1,0);camera.lookAt(1,lerp(7,6.5,k),-34);camera.fov=58}
+ // Tarjeta de estudio (0–1.9 s), título (2.0–4.4 s) y negro (4.4–9.4 s).
+ function stage(){
+  const T0=TIMELINE,op=(el,v)=>{el.style.opacity=v.toFixed(3)};
+  op(studio,t<T0.title?ramp(t,0,.2)*(1-ramp(t,1.6,T0.logoOut)):0);
+  op(titlecard,ramp(t,T0.title+.05,T0.title+.4)*(1-ramp(t,3.7,4.3)));op(press,ramp(t,2.2,2.5));
+  fade.style.opacity=t<2.4?'1':t<3.7?String(1-ramp(t,2.4,2.6)):t<T0.aerial?String(ramp(t,3.7,4.4)):'0';
+ }
+ // ───────── Cinemática real: escenas simuladas con el motor del juego (RocketSim) y cámaras de dirección ─────────
+ // Cada escena (intro-track.json) es una mini-simulación con física real; aquí solo se reproduce, se coloca la cámara
+ // y se disparan efectos (explosiones, gol). El jugador solo desbloquea los avisos.
+ const L=(a,b,k)=>a+(b-a)*k,E=smooth,clamp01=k=>Math.min(1,Math.max(0,k));
  const frameCars=[];
- const car=(a,x,y,z,yaw,o={})=>{a.root.position.set(x,y,z);a.root.rotation.set(o.pitch||0,yaw,o.roll||0,'YXZ');a.setVisible(true,false);a.flame.visible=!!o.boost;a.update(t);
-  if(o.boost){const f=new T.Vector3(0,0,-1).applyEuler(a.root.rotation);frameCars.push({a,state:{slot:a.__slot,team:a.__team,onGround:y<.4,isBoosting:true,isFlipping:false,isDemoed:false,boost:90,position:[x,y,z],velocity:[f.x*30,f.y*30,f.z*30],forward:{x:f.x,y:f.y,z:f.z}}})}};
- const ballAt=(x,y,z,spin=0)=>{ball.visible=true;ballShadow.visible=true;ball.position.set(x,y,z);ball.rotation.set(spin,spin*.6,0);ballShadow.position.set(x,.015,z);ballShadow.material.opacity=.22/(1+y*.15)};
- const cam=(px,py,pz,lx,ly,lz,fov=50)=>{camera.position.set(px,py,pz);camera.up.set(0,1,0);camera.lookAt(lx,ly,lz);camera.fov=fov};
- const chase=(x,y,z,yaw,back,up,ahead,fov=62)=>{const dx=-Math.sin(yaw),dz=-Math.cos(yaw);cam(x-dx*back,y+up,z-dz*back,x+dx*ahead,y+.7,z+dz*ahead,fov)};
+ const V3=T.Vector3,Q4=T.Quaternion;
+ const carS=Array.from({length:6},()=>({p:new V3(),q:new Q4(),v:new V3(),f:new V3(),fl:0,boost:0}));
+ const ballS={p:new V3(),q:new Q4(),v:new V3()};
+ const qa=new Q4(),qb=new Q4(),tA=new V3(),tB=new V3();
+ // Interpola el fotograma grabado (60 Hz) de la escena en el instante `time`.
+ function sample(sc,time){
+  const n=sc.n,hz=sc.hz,x=Math.max(0,Math.min(n-1.0001,time*hz)),i=x|0,k=x-i,A=sc.frames[i],Bf=sc.frames[i+1],ns=sc.slots.length;
+  for(let c=0;c<ns;c++){const o=c*9,s=carS[sc.slots[c]];
+   s.p.set(L(A[o],Bf[o],k),L(A[o+1],Bf[o+1],k),L(A[o+2],Bf[o+2],k));
+   s.v.set((Bf[o]-A[o])*hz,(Bf[o+1]-A[o+1])*hz,(Bf[o+2]-A[o+2])*hz);
+   qa.set(A[o+3],A[o+4],A[o+5],A[o+6]);qb.set(Bf[o+3],Bf[o+4],Bf[o+5],Bf[o+6]);s.q.copy(qa).slerp(qb,k);
+   s.fl=(k<.5?A:Bf)[o+7];s.boost=A[o+8];s.f.set(0,0,-1).applyQuaternion(s.q);
+  }
+  const o=ns*9;
+  ballS.p.set(L(A[o],Bf[o],k),L(A[o+1],Bf[o+1],k),L(A[o+2],Bf[o+2],k));
+  ballS.v.set((Bf[o]-A[o])*hz,(Bf[o+1]-A[o+1])*hz,(Bf[o+2]-A[o+2])*hz);
+  qa.set(A[o+3],A[o+4],A[o+5],A[o+6]);qb.set(Bf[o+3],Bf[o+4],Bf[o+5],Bf[o+6]);ballS.q.copy(qa).slerp(qb,k);
+ }
+ const bigFlame=new Set(),hideCar=new Set();let goalAt=0;
+ const VEH=()=>[B,D,R,O,W,X];
+ // Muestra la escena `id` en su tiempo `time`; `vis` son los puestos visibles.
+ function show(id,time,vis){
+  const sc=TRK[id];sample(sc,time);const veh=VEH();
+  for(const k of sc.slots){const v=veh[k],s=carS[k];if(!v)continue;
+   const dem=!!(s.fl&8),boost=!!(s.fl&2)&&!dem,on=vis.includes(k);
+   v.root.position.copy(s.p);v.root.quaternion.copy(s.q);v.setVisible(on&&!dem&&!hideCar.has(v),false);
+   v.flame.visible=on&&boost;v.flame.scale.setScalar(bigFlame.has(v)?3.4:1);v.update(time);
+   if(on&&boost)frameCars.push({a:v,state:{slot:k,team:k<3?0:1,onGround:!!(s.fl&1),isBoosting:true,isFlipping:!!(s.fl&4),isDemoed:false,boost:s.boost,position:s.p.toArray(),velocity:s.v.toArray(),forward:{x:s.f.x,y:s.f.y,z:s.f.z}}});
+  }
+  ball.visible=true;ballShadow.visible=true;ball.position.copy(ballS.p);ball.quaternion.copy(ballS.q);ballShadow.position.set(ballS.p.x,.015,ballS.p.z);ballShadow.material.opacity=Math.max(.04,.22-ballS.p.y*.008);
+  // Eventos reales de la simulación: demoliciones y gol.
+  for(const e of sc.events){if(e.t>(sc.last??-1)&&e.t<=time){
+   if(e.type==='demo'){boom('dm'+id+e.t+e.slot,e.p,1.5);burst('dms'+id+e.t+e.slot,e.p,[.45,.42,.4],140,6,1.4)}
+   if(e.type==='goal'){goalAt=T0V+e.t;boom('goal',[ballS.p.x,Math.max(1.4,ballS.p.y),Math.min(ballS.p.z,-51.5)],2.1);burst('g2',[ballS.p.x,2,-52],[1,.55,.1],300,18,1.3);burst('g3',[ballS.p.x,2,-51.5],[.55,.38,.2],220,7,2.2)}
+  }}
+  sc.last=time;
+ }
+ const T0V=30.7;
  const burst=(key,c,rgb,n,sp,ttl)=>once(key,()=>bursts.add(c,rgb,n,sp,ttl));
  const boom=(key,c,big=1)=>once(key,()=>{bursts.add(c,[1,.72,.28],Math.round(420*big),16*big,1.6);bursts.add(c,[1,1,.9],Math.round(160*big),26*big,.8);audio.noise(1.6,.9,900);audio.tone(55,1,.7,'sine',22);flash.style.transition='none';flash.style.opacity=.85;requestAnimationFrame(()=>{flash.style.transition='opacity .6s';flash.style.opacity=0})});
- const S=[];const sh=(id,dur,run,o={})=>S.push({id,dur,run,...o});
- const dirB=yawOf(0,-1),dirO=yawOf(0,1);
- // Saque y montaje: copia plano a plano del vídeo (19.6–30.6 s).
- const huge=(a,on)=>{a.flame.scale.setScalar(on?3.4:1)};
  const goTxt=()=>once('go',()=>{count.textContent='GO!';count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');audio.tone(990,.4,.25,'sine')});
- const trail=(key,p,rgb)=>bursts.add(p,rgb,5,1.2,.45);
- // 19.6–20.0 coche azul de lado, de izquierda a derecha.
- sh('k1',.5,(k)=>{const z=L(38,22,k);car(B,-1,.17,z,dirB,{boost:true});ballAt(0,.9125,0);cam(7,.7,30,-1,1,30,50);if(k>.55)goTxt()});
- // 20.1–20.3 coche naranja en primer plano, tres cuartos delantero.
- sh('k2',.3,(k)=>{car(O,0,.17,L(-31,-26,k),dirO+.35,{boost:true});huge(O,false);ballAt(0,.9125,0);cam(3,.75,-21.5,-.5,.6,-28,56)});
- // 20.4–20.8 coche naranja de lado con una llama enorme.
- sh('k3',.5,(k)=>{car(O,0,.17,L(-24,-12,k),dirO,{boost:true});huge(O,true);ballAt(0,.9125,0);cam(8,.6,-18,-1,.9,-18,50)});
- // 20.9–21.5 vista alta del círculo central: dos estelas convergen en el balón.
- sh('k4',.7,(k)=>{huge(O,false);const e=E(k);car(B,L(-26,-3.2,e),.17,L(-9,-1.4,e),yawOf(22.8,7.6),{boost:true});car(O,L(27,3.2,e),.17,L(6,1.2,e),yawOf(-23.8,-4.8),{boost:true});ballAt(0,.9125+Math.sin(k*40)*.015,0,0);cam(0,6.5,10.5,0,0,-1.5,64)});
- // 21.6–21.9 el balón sale disparado hacia la cámara.
- sh('k5',.4,(k)=>{const e=k*k;ballAt(L(0,.4,e),L(.9,2.3,e),L(0,7.2,e),k*18);boom('b0',[0,.9,0],.35);cam(0,2,7.8,0,1,0,58)});
- // 22.0–22.9 a ras de suelo: coche naranja y el balón enorme encima.
- sh('k6',1,(k)=>{car(O,L(-4.8,3.4,k),.17,3.4,yawOf(1,0),{boost:false});ballAt(L(-3.2,-2.4,k),L(3.3,3.1,k),5.6,k*5);cam(0,.8,10.5,1,2,-1,62)});
- // 23.0–23.3 explosión que llena la pantalla.
- sh('k7',.4,(k)=>{ballAt(-3,2.9,5.8,2.5);boom('b1',[3.4,1.1,3.4],1.5);cam(0,.8,10.5,1,2,-1,62)});
- // 23.4–23.9 un coche oscuro vuela del revés por la explosión; humo.
- sh('k8',.6,(k)=>{ballAt(-3.2,L(2.6,1.3,E(k)),L(5.8,6.8,k),2.5+k*3);car(D,L(2,7,k),L(3.8,3.2,k),4.2,yawOf(1,-.4),{roll:Math.PI*.8+k*5,pitch:k*2});burst('sm',[3,1,3],[.45,.42,.4],140,6,1.2);cam(0,.8,10.5,1,2,-1,62)});
- // 24.0–24.3 balón rodando bajo, a la izquierda.
- sh('k9',.4,(k)=>{ballAt(L(-4,-8.5,k),.9125+Math.abs(Math.sin(k*6))*.5,L(2,3,k),k*-7);cam(1,.5,10,-6,1.1,0,56)});
- // 24.4–24.8 un coche naranja avanza hacia la izquierda; otro, pequeño, detrás.
- sh('k10',.5,(k)=>{car(O,L(5,-2,k),.17,-24,yawOf(-1,.18),{boost:true});car(W,L(13,8,k),.17,-27,yawOf(-1,.1),{boost:true});ballAt(14,.9125,-26);cam(1,.7,-18.5,4,1.2,-25,58)});
- // 24.9–25.7 el balón entra botando desde la derecha.
- sh('k11',.9,(k)=>{car(O,L(-2,-8,k),.17,-23,yawOf(-1,.3),{boost:k<.5});car(W,L(7,3,k),.17,-26.5,yawOf(-1,.3));const b=L(15,3,E(k));ballAt(b,.9125+Math.abs(Math.sin(k*7))*2.3*(1-k*.5),L(-24,-17,k),k*-9);cam(1,.7,-18,4,1.3,-24,58)});
- // 25.8–26.7 choque entre coche blanco y oscuro; el naranja vuelca; explosiones.
- sh('k12',.9,(k)=>{const c=clamp01((k-.28)/.3);car(W,L(18,6,E(clamp01(k/.55))),.17+(k>.5?Math.max(0,(k-.5))*5:0),-24,yawOf(-1,.1)+c*1.5,{boost:k<.55,roll:c*2.5});car(D,L(-2,4,k),.17+Math.max(0,Math.sin(clamp01(k/.5)*Math.PI))*3.6,-23,yawOf(1,0),{roll:k*7,pitch:k*3});car(O,L(-11,-16,k),.17+(k>.4?.5:0),L(-22,-27,k),yawOf(-1,.4),{roll:k>.4?Math.PI:0});
-   ballAt(L(-3,2,k),.9125+Math.abs(Math.sin(k*5))*1.4,L(-27,-31,k),k*5);if(k>.3)burst('c1',[4.5,1.5,-24],[1,.8,.4],160,8,.8);if(k>.6)boom('b2',[10,1,-38],.8);cam(0,.8,-17.5,3,1.3,-25,60)});
- // 26.8–27.3 cámara pegada a la pared; el Octane azul acelera por el borde.
- sh('k13',.6,(k)=>{car(B,31,.17,L(22,-6,k),dirB,{boost:true});ballAt(0,.9125,-30);cam(35.8,.45,16,31,.9,L(10,-4,k),66)});
- // 27.4–28.1 salto del coche azul al balón en el aire.
- sh('k14',.8,(k)=>{const e=E(k);car(B,L(-9,0,e),L(.17,5.6,e),L(11,-5,e),yawOf(.7,-1),{boost:true,pitch:.38});ballAt(L(-5,-1,e),L(5.8,7,e),L(-5,-9,e),k*8);car(W,L(10,14,k),L(7,10,k),L(-3,-9,k),yawOf(1,-1),{boost:true,pitch:.3});const cx=L(-9,0,e),cz=L(11,-5,e);cam(cx+6,L(.9,4.5,e),cz+7,L(-5,-1,e),L(5.8,7,e),L(-5,-9,e),64)});
- // 28.2–29.0 el balón sale volando; el coche azul cae dando vueltas.
- sh('k15',.9,(k)=>{ballAt(L(-1,13,E(k)),L(7,19,E(k))-k*k*4,L(-9,-30,E(k)),k*14);trail('t',ball.position.toArray(),[.35,.7,1]);car(B,L(-8,-9,k),L(5.2,.5,k*k),L(-5,-4,k),yawOf(1,-1),{roll:k*7,pitch:k*3});if(k<.2)boom('b3',[13,12,-24],.8);cam(L(-2,2,k),L(1,4,k),L(1,-1,k),L(0,6,k),L(5,12,k),-18,64)});
- // 29.1–30.6 coche naranja derrapando de izquierda a derecha; el balón cae hacia la cámara; plano inclinado.
- sh('k16',1.6,(k)=>{camera.up.set(0,1,0);car(O,L(-9,10,k),.17,L(-3,-2.4,k),yawOf(1,0)+.55,{boost:true});ballAt(L(-6.5,-4.2,k),L(8,2.3,E(k)),L(0,5.5,k),k*-8);cam(0,.6,6,0,1.2,-2.5,60);camera.up.set(Math.sin(.17),Math.cos(.17),0);camera.lookAt(0,1.2,-2.5)});
- // ───────── Aviso "PREPÁRATE PARA DEFENDER" (30.7–33.5 s): rótulo plano fijo en pantalla ─────────
- sh('ready',2.8,(k,s)=>{camera.up.set(0,1,0);ballAt(L(2,-3,k),.9125+Math.abs(Math.sin(k*9))*3.2*(1-k*.5),-44,k*6);cam(L(-9,-5,E(k)),L(.55,2.2,E(k)),L(14,28,E(k)),L(-3,-8,E(k)),L(3,6,E(k)),-44,L(48,60,E(k)));ready.classList.toggle('on',k>.04&&k<.97)});
- // 33.5–34.4 entra el coche del jugador por abajo de la cámara.
- sh('arrive',.9,(k)=>{ready.classList.remove('on');car(B,L(-3.2,2.2,E(k)),.17,L(22.5,19.4,E(k)),yawOf(1,-.35)+(1-k)*.3);ballAt(0,.9125,-40);cam(0,.55,25,-4,3.4,-6,56)});
- // AVISO 1 (34.5 s): mantener W — escena oscurecida y casi parada.
- sh('p1',.8,(k)=>{car(B,L(2.2,3.4,k),.17,L(19.4,17.6,k),yawOf(.7,-1));ballAt(0,.9125,-40);cam(0,.55,25,-4,3.4,-6,56)},{prompt:{action:'forward',mode:'hold',text:a=>`Mantén ${a('forward')} para conducir.`}});
- // 36.7–38.9 cámara al pie de la pared azul; el coche se aleja en diagonal.
- sh('d1',2.2,(k)=>{const cx=L(30,23,E(k)),cz=L(17,3,E(k));car(B,cx,.17,cz,yawOf(-1,-1.25),{boost:false});ballAt(0,.9125,-40);cam(cx+6.5,.5,cz+8,cx-3,1.3,cz-7,58)});
- // AVISO 2 (39.0 s): saltar.
- sh('p2',.8,(k)=>{const cx=L(23,21,k),cz=L(3,1.4,k);car(B,cx,.17,cz,yawOf(-1,-1.25));ballAt(0,.9125,-40);cam(cx+6.5,.5,cz+8,cx-3,1.3,cz-7,58)},{prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
- // 40.5–41.6 persecución baja: el coche avanza sobre las franjas azules; el balón bota al fondo.
- sh('d2',1.2,(k)=>{const z=L(1.4,-9,k),x=L(21,18,k);car(B,x,.17,z,yawOf(0,-1)+.1);ballAt(L(15,13,k),.9125+Math.abs(Math.sin(k*5))*2.6,L(-14,-12,k),k*-6);cam(x-3.4,.6,z+7,x+1,1.2,z-10,64)});
- // 41.7–41.9 primer plano: balón a la izquierda, coche abajo.
- sh('d3',.3,(k)=>{car(B,18,.17,L(-9,-8,k),yawOf(0,-1)+.05,{boost:false});ballAt(L(15,14,k),3.2,-14,k*5);cam(14,.7,-1.5,16,1.7,-12,70)});
- // 42.0–43.3 plano lateral junto a una plataforma de turbo: salto del Octane azul.
- sh('d4',1.4,(k)=>{const e=E(k);car(B,L(10,16,e),L(.17,3.3,E(clamp01(k*1.25))),-14,yawOf(1,0),{pitch:.28,boost:true});ballAt(L(13,15,k),4.7,-14.5,k*-2);cam(L(7,9,k),.9,-6.5,L(12,15,k),2.7,-14,60)});
- // 43.4–44.4 cámara a ras de línea de banda frente a la pared de flechas; el balón cae.
- sh('d5',1.1,(k)=>{ballAt(L(39,33,E(k)),L(14,1.2,k*k),-10,k*-12);if(k>.8)car(B,33,.17,L(2,-8,(k-.8)*5),yawOf(0,-1));cam(13,.5,-4,41,6,-10,52)});
- // 44.5–44.7 detrás del coche, sobre el círculo central, con una plataforma hexagonal.
- sh('d6',.3,(k)=>{car(B,0,.17,6.2,dirB);ballAt(2,L(6.5,6,k),-17,k*3);cam(-2.4,.8,10.8,.4,1.6,-6,56)});
- // AVISO 3 (44.8 s): mantener Mayús (turbo).
- sh('p3',.7,(k)=>{car(B,0,.17,L(6.2,5.3,k),dirB);ballAt(1.4,L(5,4.4,k),-20,k*3);cam(-2.4,.8,L(10.2,9.4,k),.4,1.6,-6,56)},{prompt:{action:'boost',mode:'hold',text:a=>`Mantén ${a('boost')} para usar el turbo.`}});
- // 45.8–47.9 persecución con turbo hacia el balón; entran dos rivales por la derecha.
- sh('d7',2.1,(k)=>{const e=k<.28?0:E((k-.28)/.72),z=L(5,-26,e*e*.6+e*.4);car(B,L(0,-.7,k),.17,z,dirB,{boost:k>.28});ballAt(L(1.5,3,k),.9125+Math.abs(Math.sin(k*8))*2.8,L(-28,-34,k),k*-8);
-   if(k>.82){car(O,L(19,8,(k-.82)*5.5),.17,-26,yawOf(-1,0),{boost:true});car(W,-14,.17,-27,yawOf(1,-.1))}chase(L(0,-.7,k),.17,z,dirB,5,1.7,14,60)});
- // 48.0–48.3 cámara baja de lado; el coche cruza con una estela larga.
- sh('d8',.4,(k)=>{car(B,L(-3,-13,k),.17,L(-30,-32.5,k),yawOf(-1,-.2),{boost:true});huge(B,true);ballAt(-15,L(5.5,5,k),-37,k*-5);cam(L(1,-5,k),.5,-26,L(-3,-13,k),1,L(-30,-32.5,k),58)});
- // 48.4–50.5 cámara baja mirando la portería naranja; el balón rueda con estela azul.
- sh('d9',2.2,(k)=>{huge(B,false);const e=E(k);ballAt(L(-5,0,e),L(3.4,.9125,e)+Math.abs(Math.sin(k*9))*.7*(1-k),L(-30,-47,e),k*-12);if(k>.55)trail('t2',ball.position.toArray(),[.3,.6,1]);cam(L(10,14,k),.45,L(-27,-24,k),L(-4,0,k),L(2.6,3.2,k),-47,L(62,56,k))});
- // 50.6–51.9 colisión aérea de dos coches junto al balón (a nivel de grada).
- sh('d10',1.4,(k)=>{const e=E(k),c=clamp01((k-.5)/.3);car(O,L(-6,3,e),L(5,9.5,e),-44,yawOf(1,0)+c*2,{boost:k<.55,roll:c*5,pitch:c*2});car(D,L(8,2,e),L(5,8.8,e),-44,yawOf(-1,0)+c*2,{boost:k<.55,roll:-c*5,pitch:c*2});ballAt(L(0,5,k),L(5,13,k),-46,k*7);if(k>.45)boom('b4',[2.5,9,-44],.9);cam(-4,2.6,-34,1,8,-44,62)});
- // 52.0–52.1 plano general desde el centro; entra el coche azul por abajo a la derecha.
- sh('d11',.2,(k)=>{car(B,L(6,5,k),.17,L(14,13.4,k),dirB);ballAt(0,L(7,6,k),-45,k*5);cam(4,.65,16,0,3.3,-30,52)});
- // 52.2–52.9 el coche azul pasa junto a la cámara, de espaldas, hacia la portería.
- sh('d12',.8,(k)=>{const z=L(13.4,2,E(k));car(B,L(5,2,E(k)),.17,z,dirB+.12*(1-k),{boost:false});ballAt(0,L(6,4.5,k),-45,k*5);cam(7.5,1.1,18,0,1.8,-30,56)});
- // 53.0–53.9 acelera y salta cerca de la portería; el balón bota en la línea.
- sh('d13',1,(k)=>{const e=E(k),j=clamp01((k-.45)/.5);car(B,L(2,.4,e),.17+Math.max(0,3*Math.sin(j*Math.PI)),L(2,-27,e),dirB,{boost:k>.1,pitch:-j*.4});ballAt(L(0,1.5,k),.9125+Math.abs(Math.sin(k*5))*3,L(-45,-47,k),k*7);if(k>.8)burst('hit2',[1.5,2.6,-45.5],[.5,.8,1],110,8,.8);chase(L(2,.4,e),.17,L(2,-27,e),dirB,5.2,1.9,12,62)});
- // 54.0–54.1 un coche verde azulado voltea junto al balón.
- sh('d14',.2,(k)=>{car(D,L(3,2,k),L(3.2,3.8,k),-44,yawOf(0,-1),{roll:1+k*3,pitch:.5});ballAt(L(.5,1,k),3,-46,1);cam(0,.8,-22,0,2.8,-46,56)});
- // 54.2–55.0 plano general bajo: el coche azul gira sobre las plataformas; el balón diminuto al fondo.
- sh('d15',.9,(k)=>{car(B,L(-1,5,k),.17,L(-23,-24,k),yawOf(1,-1.2*(1-k)-.1));ballAt(-1,L(5,1.5,k),-45,k*3);cam(-3,.7,-16.5,L(0,5,k),1.2,-30,60)});
- // AVISO 4 (55.1 s): saltar otra vez.
- sh('p4',.7,(k)=>{car(B,L(5,6.2,k),.17,-24.2,yawOf(1,-.8));ballAt(-1,2.5,-45,1);cam(2,.8,-17,8,1.8,-26,58)},{prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
- // 56.0–56.7 el coche salta sobre la plataforma de turbo con fuego trasero.
- sh('d16',.8,(k)=>{const h=Math.max(0,Math.sin(k*Math.PI));car(B,L(6.2,9.5,E(k)),.17+h*1.6,-24.3,yawOf(1,-.6),{boost:k>.45,pitch:-h*.3});ballAt(-1,L(2.5,2,k),-45,1);cam(2,.8,-17,L(8,10,k),1.8,-26,58)});
- // AVISO 5 (56.8 s): voltereta hacia delante (W + espacio).
- sh('p5',.9,(k)=>{car(B,L(9.5,10.6,k),.17+1.4+Math.sin(k*2)*.1,-24.3,yawOf(1,-.9),{pitch:-.15});ballAt(-1,2,-45,1);cam(2,.8,-17,10,2.4,-26,58)},{prompt:{action:'forward',mode:'dodge',text:a=>`Pulsa ${a('forward')} + ${a('jump')} para hacer la voltereta hacia delante.`}});
- // 58.5–58.9 persecución desde detrás: el coche hace la voltereta hacia el balón.
- sh('d17',.5,(k)=>{const e=E(k),z=L(-24.3,-39,e);car(B,L(10.6,3,e),.17+Math.max(0,Math.sin(k*Math.PI))*2.4+1.1*(1-k),z,yawOf(-.35,-1),{pitch:-k*Math.PI*2,boost:true});ballAt(L(-1,0,k),L(2,2.7,k),L(-45,-45,k),k*9);cam(L(16,6,k),1.7,z+9,L(8,2,k),2,L(-34,-45,k),62)});
- // 59.0–59.3 plano lateral a ras de línea de gol: el balón enorme junto al coche azul; el defensor (verde azulado) vuelca dentro de la portería.
- sh('d18',.4,(k)=>{goalword.classList.remove('on','r');car(B,L(6.2,4,k),L(2,1.3,k),L(-45,-47,k),yawOf(-.9,-1),{boost:true,pitch:.3,roll:.3});car(D,L(2.2,3,k),L(2.6,1.9,k),L(-51,-50.8,k),yawOf(-.2,1),{roll:1.6+k*3,pitch:.5});ballAt(L(3.4,1.4,k),L(2.6,2.3,k),L(-45.6,-48.6,k),k*12);cam(16,1.1,-44.5,-1,2.2,-51.5,56)});
- // 59.4–59.7 el balón cruza la línea; el azul cae al césped y el defensor queda dando vueltas en la red.
- sh('d19',.4,(k)=>{car(B,L(4,4.8,k),L(1.2,.45,k),L(-47,-46.2,k),yawOf(-1,-1),{roll:L(.3,2.6,k),pitch:.2});car(D,L(3,2.2,k),L(1.9+Math.sin(k*3)*.5,.9,k),L(-50.8,-51.2,k),yawOf(-.2,1),{roll:4.6+k*3,pitch:.5+k*2});ballAt(L(1.4,0,k),L(2.3,1.3,k),L(-48.6,-52,E(k)),k*10);cam(16,1.1,-44.5,-1,2.2,-51.5,56)});
- // 59.8–60.1 destello blanco y explosión de rayos naranja dentro de la red (el cartel GOAL! detrás).
- sh('d20',.4,(k)=>{goalword.classList.add('on','r');car(B,4.8,.2,-46.2,yawOf(-1,-1),{roll:2.6});car(D,L(2.2,1.6,k),L(.9,2.6,k),-51.3,yawOf(-.2,1),{roll:L(7.6,9.5,k),pitch:L(1.5,3,k)});ballAt(.4,1.2,-52.2,k*10);boom('goal',[.2,1.6,-52.3],2.1);burst('g2',[.2,2,-52],[1,.55,.1],300,18,1.3);cam(16,1.1,-44.5,-1,2.2,-51.5,56)});
- // 60.2–61.1 césped alto en primer plano, frente a la portería: explosión naranja, humo; el coche verde azulado sale lanzado y cae; cartel GOAL! azul a la izquierda.
- sh('d21',1,(k)=>{goalword.classList.remove('r');goalword.classList.add('on');B.setVisible(false,false);car(D,L(1.2,3.5,k),.17+Math.max(0,Math.sin(k*Math.PI*.9))*4.5,L(-51,-48.8,k),yawOf(1,1),{roll:k*7,pitch:k*4});burst('g3',[0,2,-51.5],[.55,.38,.2],260,7,2.2);if(k>.3)burst('g4',[.6,1.4,-50.5],[.4,.36,.34],200,4,2.4);if(k>.6)burst('g5',[-.4,1.2,-50],[.4,.36,.34],160,3,2.2);ballAt(0,-9,0);cam(0,.3,-31,-3,3.2,-52,46)});
- // 61.2–61.6 el coche azul sale de la portería hacia la cámara, a ras de césped; el defensor queda en el suelo.
- sh('end',.55,(k)=>{goalword.classList.add('on');car(D,2,.3,-50.3,yawOf(1,1),{roll:Math.PI*.55,pitch:.2});const z=L(-47,-30.4,k*k*k);car(B,0,.17,z,yawOf(0,1),{boost:false});cam(0,.3,-30,-3,3.2,-52,L(46,60,k*k));ballAt(0,-9,0)});
+ // Cámaras: relativas a lo que pasa en la simulación.
+ // La cámara nunca sale del estadio (elipse de 40 x 50 m): si el punto queda fuera, se acerca al centro.
+ const cam=(px,py,pz,lx,ly,lz,fov=50)=>{const q=(px/40)*(px/40)+(pz/50)*(pz/50);if(q>.88){const k=Math.sqrt(.88/q);px*=k;pz*=k}camera.position.set(px,Math.max(.4,py),pz);camera.up.set(0,1,0);camera.lookAt(lx,ly,lz);camera.fov=fov};
+ const camV=(p,l,fov=50)=>cam(p.x,p.y,p.z,l.x,l.y,l.z,fov);
+ const rightOf=(f,o)=>o.set(-f.z,0,f.x).normalize();
+ const inner=(x,z)=>(x/40)*(x/40)+(z/52)*(z/52);
+ // Al lado del coche (por el lado del centro del campo), mirando un poco por delante.
+ const side=(c,dist,h,ahead,fov)=>{rightOf(c.f,tA);const px=c.p.x+tA.x*dist,pz=c.p.z+tA.z*dist,mx=c.p.x-tA.x*dist,mz=c.p.z-tA.z*dist,sg=inner(px,pz)<=inner(mx,mz)?1:-1;tA.multiplyScalar(dist*sg).add(c.p);tA.y=h;tB.copy(c.f).multiplyScalar(ahead*.3).add(c.p);tB.y=Math.max(.5,c.p.y+.4);camV(tA,tB,fov)};
+ const chase=(c,back,up,ahead,fov)=>{tA.copy(c.f).setY(0).normalize();const fx=tA.x,fz=tA.z;tB.set(c.p.x-fx*back,c.p.y+up,c.p.z-fz*back);tA.set(c.p.x+fx*ahead,c.p.y+.7,c.p.z+fz*ahead);camV(tB,tA,fov)};
+ const front34=(c,dist,h,off,fov)=>{tA.copy(c.f).setY(0).normalize();rightOf(tA,tB);tB.multiplyScalar(off).add(c.p).addScaledVector(tA,dist);tB.y=h;tA.copy(c.p);tA.y+=.55;camV(tB,tA,fov)};
+ const lookBall=(px,py,pz,fov=56,dy=0)=>cam(px,py,pz,ballS.p.x,ballS.p.y+dy,ballS.p.z,fov);
+ const lookCar=(px,py,pz,c,fov=56,dy=.6)=>cam(px,py,pz,c.p.x,c.p.y+dy,c.p.z,fov);
+ let curShot='';const SM={p:new V3(),l:new V3(),id:''},mid=new V3();
+ const follow=(pos,look,fov,sm=.18)=>{if(SM.id!==curShot){SM.p.copy(pos);SM.l.copy(look);SM.id=curShot}else{SM.p.lerp(pos,sm);SM.l.lerp(look,sm)}camV(SM.p,SM.l,fov)};
+ const watch=(target,dist,h,fov=58,dy=0,sm=.16)=>{tA.set(-target.x,0,-target.z);if(tA.lengthSq()<1)tA.set(0,0,1);tA.normalize();tB.set(target.x+tA.x*dist,Math.max(.5,h),target.z+tA.z*dist);tA.set(target.x,target.y+dy,target.z);follow(tB,tA,fov,sm)};
+ const S=[];let vAcc=19.6;
+ // sh(id, duración, escena, t0 de escena, velocidad, visibles, cámara)
+ const sh=(id,dur,sc,m0,rate,vis,cm,o={})=>{const v0=vAcc,run=o.tut?cm:(k,st,v)=>{show(sc,m0+(v-v0)*rate,vis);if(o.go&&k>.55)goTxt();cm(k,st,v)};const {tut,go,...rest}=o;S.push({id,dur,run,v0,...rest});vAcc+=dur};
+ const ALLV=[0,1,2,3,4,5];
+ // ── Montaje del saque (19.6–23.9): partido Nexto real, grabado ──
+ sh('k1',.5,'M',0,1,ALLV,()=>{side(carS[3],3.8,.55,2.5,56)},{go:true});
+ sh('k2',.3,'M',.5,1,ALLV,()=>{side(carS[3],3.4,.6,2.5,58)});
+ sh('k3',.5,'M',.8,1,ALLV,()=>{bigFlame.add(O);side(carS[3],5.2,.55,1,52)});
+ sh('k4',.6,'M',1.3,1,ALLV,()=>{bigFlame.clear();cam(0,8.5,4.5,0,0,-.5,62)});
+ sh('k5',.5,'M',1.9,1,ALLV,()=>{lookBall(1.8,1.0,7.5,58,.2)});
+ sh('k6',1.1,'M',2.4,.66,ALLV,()=>{cam(-2,.7,-1,ballS.p.x*.55+carS[3].p.x*.45,Math.max(1.4,ballS.p.y*.5),ballS.p.z*.55+carS[3].p.z*.45,64)});
+ sh('k7',.4,'M',3.13,1,ALLV,()=>{cam(-2.5,.9,8,-8,1.4,14.3,62)});
+ sh('k8',.4,'M',3.5,1,ALLV,()=>{watch(ballS.p,12,2.2,62,.4)});
+ // ── Escenas sueltas (cada una con su física real) ──
+ sh('k9',.5,'B1',0,1,[],()=>{lookBall(5,.7,-9.5,56,.2)});
+ sh('k10',.5,'B2',0,1,[3,1],()=>{side(carS[3],6,.9,3,58)});
+ sh('k11',.2,'B2',.6,1,[3,1],()=>{watch(ballS.p,10,1.3,60)});
+ sh('k12',.7,'B3',0,1,[],()=>{cam(-1.5,1.2,-1,ballS.p.x,ballS.p.y,ballS.p.z,60)});
+ sh('k13',.4,'B4',.1,1,[2,0,1,3,4],()=>{lookCar(-9,1.6,29,carS[2],58,.4)});
+ sh('k14',.6,'B4',.5,1,[2,0,1,3,4],()=>{cam(-8,1.4,17,-20.4,1,25.7,60)});
+ sh('k15',.6,'B5',0,1,[0],()=>{side(carS[0],6.5,.55,3,62)});
+ sh('k16',.8,'B5',.6,1,[0],()=>{mid.copy(carS[0].p).lerp(ballS.p,.5);watch(mid,14,2.8,62)});
+ sh('k17',.9,'B5',1.4,1,[0],()=>{watch(ballS.p,16,2.2,60)});
+ sh('k18',1.6,'B6',0,1,[3],()=>{side(carS[3],7,.8,4,58)});
+ // ── Tutorial (30.7–61.7): partido real con el coche azul guiado por el guion ──
+ const TT=(v)=>show('T',v-T0V,[0].concat(v>47.3&&v<52.3?[3]:[],v>=57.6?[5]:[]));
+ const P=()=>carS[0];
+ sh('ready',2.8,'T',0,1,[],(k,s,v)=>{hideCar.add(B);TT(v);const p0=TRK.T.p0;cam(L(p0.x-9,p0.x-5,E(k)),L(.55,2.2,E(k)),L(p0.z-10,p0.z+4,E(k)),L(-3,-8,E(k))+ballS.p.x*.3,L(3,6,E(k)),ballS.p.z,L(48,60,E(k)));ready.classList.toggle('on',k>.04&&k<.97)},{tut:true});
+ sh('arrive',.9,'T',0,1,[],(k,s,v)=>{hideCar.delete(B);ready.classList.remove('on');TT(v);const p0=TRK.T.p0;cam(p0.x+.3,.6,p0.z+3.6,p0.x-3,3.2,p0.z-30,56)},{tut:true});
+ sh('p1',.8,'T',0,1,[],(k,s,v)=>{TT(v);const p0=TRK.T.p0;cam(p0.x+.3,.6,p0.z+3.6,p0.x-3,3.2,p0.z-30,56)},{tut:true,prompt:{action:'forward',mode:'hold',text:a=>`Mantén ${a('forward')} para conducir.`}});
+ sh('d1',2.2,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),7,.55,4,58)},{tut:true});
+ sh('p2',.8,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),7,.55,4,58)},{tut:true,prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
+ sh('d2',1.2,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),3.4,.6,10,64)},{tut:true});
+ sh('d3',.3,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),2.4,.5,6,70)},{tut:true});
+ sh('d4',1.4,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),5.5,.9,2,60)},{tut:true});
+ sh('d5',1.1,'T',0,1,[],(k,s,v)=>{TT(v);lookBall(ballS.p.x-12,.6,ballS.p.z+6,52)},{tut:true});
+ sh('d6',.3,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),4.4,.8,6,56)},{tut:true});
+ sh('p3',.7,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),4.4,.8,6,56)},{tut:true,prompt:{action:'boost',mode:'hold',text:a=>`Mantén ${a('boost')} para usar el turbo.`}});
+ sh('d7',2.1,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),5,1.7,14,60)},{tut:true});
+ sh('d8',.4,'T',0,1,[],(k,s,v)=>{TT(v);bigFlame.add(B);side(P(),8,.5,1,58)},{tut:true});
+ sh('d9',2.2,'T',0,1,[],(k,s,v)=>{bigFlame.clear();TT(v);lookBall(ballS.p.x+9,.45,ballS.p.z+11,58,.4)},{tut:true});
+ sh('d10',1.4,'T',0,1,[],(k,s,v)=>{TT(v);lookBall(ballS.p.x-5,2.6,ballS.p.z+11,62,.8)},{tut:true});
+ sh('d11',.2,'T',0,1,[],(k,s,v)=>{TT(v);cam(4,.65,16,0,3.3,-30,52)},{tut:true});
+ sh('d12',.8,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),7.5,1.1,6,56)},{tut:true});
+ sh('d13',1,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),5.2,1.9,12,62)},{tut:true});
+ sh('d14',.2,'T',0,1,[],(k,s,v)=>{TT(v);lookBall(0,.8,ballS.p.z+22,56,.4)},{tut:true});
+ sh('d15',.9,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.7,P().p.z+8,P(),60,.8)},{tut:true});
+ sh('p4',.7,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.7,P().p.z+8,P(),58,.8)},{tut:true,prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
+ sh('d16',.8,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.8,P().p.z+8,P(),58,.8)},{tut:true});
+ sh('p5',.9,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.8,P().p.z+8,P(),58,.8)},{tut:true,prompt:{action:'forward',mode:'dodge',text:a=>`Pulsa ${a('forward')} + ${a('jump')} para hacer la voltereta hacia delante.`}});
+ sh('d17',.5,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),9,1.7,12,62)},{tut:true});
+ sh('d18',.4,'T',0,1,[],(k,s,v)=>{goalword.classList.remove('on','r');TT(v);cam(16,1.1,-44.5,ballS.p.x,2.2,Math.min(ballS.p.z,-47),56)},{tut:true});
+ sh('d19',.4,'T',0,1,[],(k,s,v)=>{TT(v);cam(16,1.1,-44.5,ballS.p.x,2.2,Math.min(ballS.p.z,-47),56)},{tut:true});
+ sh('d20',.4,'T',0,1,[],(k,s,v)=>{TT(v);if(goalAt&&v>=goalAt-.05)goalword.classList.add('on','r');cam(16,1.1,-44.5,ballS.p.x,2.2,Math.min(ballS.p.z,-47),56)},{tut:true});
+ sh('d21',1,'T',0,1,[],(k,s,v)=>{goalword.classList.remove('r');goalword.classList.add('on');TT(v);cam(0,.3,-31,-3,3.2,-52,46)},{tut:true});
+ sh('end',.55,'T',0,1,[],(k,s,v)=>{goalword.classList.add('on');TT(v);front34(P(),6+k*3,.35,0,L(46,60,k*k))},{tut:true});
  const TOTAL_REL=()=>S.reduce((a,b)=>a+b.dur,0);
- let B=null,O=null,D=null,W=null,ready=null,goalword=null;
+ let B=null,O=null,D=null,W=null,R=null,X=null,ready=null,goalword=null,TRK=null;
+ const ALL=()=>[B,O,D,W,R,X].filter(Boolean);
+ const TRACK_URL=new URL('./intro-track.json?v=rl-20261101',import.meta.url);
  let st=0,idx=0,shotT=0,waiting=false,held=0,prevDown={},endPhase=0,endT=0;
  const downKeys=new Set();
  const isDown=(a)=>{for(const c of downKeys)if(matches(a,c))return true;return false};
@@ -268,7 +293,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   const s=S[idx];if(!s){return endSeq(dt)}
   const p=s.prompt;let rate=1;
   if(waiting&&p){
-   rate=.06;const d=isDown(p.action),j=isDown('jump');
+   rate=0;const d=isDown(p.action),j=isDown('jump');
    if(p.mode==='hold'){held=d?held+dt:0;if(held>.55)release()}
    else if(p.mode==='press'){if(d&&!prevDown[p.action])release()}
    else if(p.mode==='dodge'){if(j&&!prevDown.jump&&isDown('forward'))release()}
@@ -277,30 +302,32 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   }
   shotT+=dt*rate;const k=clamp01(shotT/s.dur);
   frameCars.length=0;
-  [B,O,D,W].forEach(a=>a.setVisible(false,false));ball.visible=true;
+  ALL().forEach(a=>a.setVisible(false,false));ball.visible=true;
   ready.classList.remove('on');goalword.classList.remove('on');
-  s.run(k,shotT);camera.updateProjectionMatrix();
+  curShot=s.id;s.run(k,shotT,s.v0+shotT);camera.updateProjectionMatrix();
   if(shotT>=s.dur&&!waiting)nextShot();
  }
  let pressedPointer=false;
  function release(){waiting=false;promptEl.classList.remove('on');dim.classList.remove('on');sound('ok'+idx,()=>audio.tone(990,.2,.14,'sine'))}
  function endSeq(dt){
   // El coche pasa sobre la cámara → corte a negro → logo.
-  endT+=dt;[B,O,D,W].forEach(a=>a.setVisible(false,false));frameCars.length=0;
+  endT+=dt;ALL().forEach(a=>a.setVisible(false,false));frameCars.length=0;
   black.style.opacity=1;if(endT>.25&&!logo.classList.contains('show')){logo.classList.add('show');sound('logo',()=>{audio.tone(60,1.6,.9,'sine',26);audio.noise(1.3,.5,2600);for(const f of [261.6,392,523.2,784])audio.tone(f,1.8,.09)})}
   if(endT>4.8)finish();
  }
  // ───────── fin guion ─────────
- function start(){
+ async function start(){
+  if(active)return;
+  if(!TRK)TRK=await fetch(TRACK_URL).then(r=>{if(!r.ok)throw Error('No se pudo cargar la cinemática');return r.json()});
   return new Promise(done=>{
    if(active)return done();
    resolve=done;active=true;t=0;sounds.clear();fired.clear();lastCount=0;root.hidden=false;flash.style.opacity=0;fade.style.opacity=1;fade.style.transition='none';count.classList.remove('pop');
    requestAnimationFrame(()=>root.classList.add('on'));
-   savedFov=camera.fov;if(!fans)fans=createFans(scene);stadium.maskCrowd?.([{x:fans.blue.focus.x,z:fans.blue.focus.z,r:12},{x:fans.orange.focus.x,z:fans.orange.focus.z,r:12}]);
+   savedFov=camera.fov;
    if(!sign)sign=makeSign(scene);if(!bursts)bursts=makeBursts(scene);bursts.hide();sign.visible=true;
-   if(!B){B=createVehicle(scene);O=createVehicle(scene);D=createVehicle(scene);W=createVehicle(scene);[[B,0,0],[O,1,1],[D,2,1],[W,3,1]].forEach(([c,sl,tm])=>{c.__slot=sl;c.__team=tm})}
-   B.apply(getProfile());O.apply({name:'Rival',body:'octane',color:'#ff8b32'});D.apply({name:'Rival',body:'dominus',color:'#1b2a33'});W.apply({name:'Rival',body:'fennec',color:'#f2f2f2'});
-   vehicle=B;orange=O;[B,O,D,W].forEach(c=>c.setVisible(false,false));
+   if(!B){B=createVehicle(scene);D=createVehicle(scene);R=createVehicle(scene);O=createVehicle(scene);W=createVehicle(scene);X=createVehicle(scene);[[B,0,0],[D,1,0],[R,2,0],[O,3,1],[W,4,1],[X,5,1]].forEach(([c,sl,tm])=>{c.__slot=sl;c.__team=tm})}
+   B.apply(getProfile());O.apply({name:'Rival',body:'octane',color:'#ff8b32'});D.apply({name:'Aliado',body:'dominus',color:'#1b2a33'});W.apply({name:'Rival',body:'fennec',color:'#d9531e'});R.apply({name:'Aliado',body:'octane',color:'#1d6fd8'});X.apply({name:'Rival',body:'dominus',color:'#ff8b32'});
+   vehicle=B;orange=O;ALL().forEach(c=>c.setVisible(false,false));hideCar.clear();bigFlame.clear();goalAt=0;for(const k in TRK)TRK[k].last=-1;
    ready=root.querySelector('.ready');goalword=root.querySelector('.goalword');idx=-1;shotT=0;endT=0;waiting=false;held=0;prevDown={};pressedPointer=false;downKeys.clear();black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');ready.classList.remove('on');goalword.classList.remove('on');frameCars.length=0;
    ball.visible=true;ball.position.set(0,.9125,0);ballShadow.visible=true;ballShadow.position.set(0,.015,0);ballShadow.material.opacity=.22;
    const keyHandler=e=>{if(!active||hold)return;if(e.target?.closest?.('form,input,textarea'))return;if(e.code==='Enter'&&!e.repeat){e.preventDefault();e.stopImmediatePropagation();onSkip();return}downKeys.add(e.code);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault()};
@@ -312,7 +339,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  function finish(){
   if(!active)return;active=false;root.classList.remove('on');removeEventListener('keydown',start.keyHandler,true);removeEventListener('keyup',start.upHandler,true);removeEventListener('pointerdown',start.ptr,true);downKeys.clear();
   const P=power(),Dc=decor();P.towers.fill(1);P.flood=P.city=P.neon=1;Dc.wall=Dc.paint=Dc.goal=1;
-  fans?.hide();stadium.maskCrowd?.(null);[B,O,D,W].forEach(c=>c?.setVisible(false,false));black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');if(sign)sign.visible=false;bursts?.hide();
+  fans?.hide();stadium.maskCrowd?.(null);ALL().forEach(c=>c?.setVisible(false,false));black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');if(sign)sign.visible=false;bursts?.hide();
   ball.rotation.set(0,0,0);camera.fov=savedFov;camera.updateProjectionMatrix();
   setTimeout(()=>{root.hidden=true},600);root.style.pointerEvents='none';
   const r=resolve;resolve=null;r?.();
@@ -321,18 +348,16 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   if(!active||hold)return;
   t+=dt;const T0=TIMELINE;
   lights();night();
-  fade.style.opacity=t<1.6?String(1-ramp(t,.2,1.6)):'0';frameCars.length=0;
-  const lvB=t>=T0.blue&&t<T0.orange?1:.12,lvO=t>=T0.orange&&t<T0.octane?1:.12;
-  fans.blue.update(t,dt,lvB,t>=T0.blue-.6&&t<T0.orange+.4);fans.orange.update(t,dt,lvO,t>=T0.orange-.6&&t<T0.octane+.4);
-  let info=null;
-  if(t<T0.sign){aerial();ball.position.y=.9125}
-  else if(t<T0.blue)signShot();
-  else if(t<T0.orange){fanShot(fans.blue,T0.blue,T0.orange-T0.blue);sound('crowdB',()=>{audio.noise(4.6,.55,1100);audio.tone(220,.9,.08,'triangle',330)})}
-  else if(t<T0.octane){fanShot(fans.orange,T0.orange,T0.octane-T0.orange);sound('crowdO',()=>{audio.noise(4.6,.55,1100);audio.tone(262,.9,.08,'triangle',392)})}
+  stage();frameCars.length=0;
+  if(t<T0.black){titleShot();ball.position.y=.9125}
+  else if(t<T0.aerial){}
+  else if(t<T0.sign){aerial();ball.position.y=.9125}
+  else if(t<T0.octane)signShot();
   else if(t<T0.count){octaneShot();sound('engine',()=>{audio.tone(55,3.6,.15,'sawtooth',160);audio.noise(3.6,.1,500)})}
   else if(t<T0.kick)countShot();
   else{if(count.classList.contains('pop'))count.classList.remove('pop');script(dt)}
-  if(t>=T0.sign&&t<T0.blue+.5){sign.visible=true}else if(t>=T0.blue+.5)sign.visible=false;
+  if(t<T0.kick)digit();
+  sign.visible=t>=T0.sign&&t<T0.octane;
   camera.updateProjectionMatrix();
   vfx.begin(dt);for(const f of frameCars)vfx.car(f.state,f.a.root,{localSlot:0,boostRGB:f.a.boostRGB});vfx.update(dt,{streaks:frameCars.some(f=>f.a===B)});
   bursts?.update(dt);
