@@ -1,70 +1,33 @@
-// Logotipo de Rocket Arena: render del Octane del juego + lettering angular dibujado a medida.
-// logoSVG() devuelve un <svg> en texto; el coche es assets/logo-car.png (render real del modelo).
-const LETTERS={
- R:{w:84,d:'M0 0H60L82 16V42L64 56L84 100H55L40 62H28V100H0ZM28 22V40H52L55 36V26L52 22Z',rule:'evenodd'},
- O:{w:84,d:'M20 0H64L84 20V80L64 100H20L0 80V20ZM28 24L26 28V72L28 76H56L58 72V28L56 24Z',rule:'evenodd'},
- C:{w:80,d:'M20 0H80V24H32L28 28V72L32 76H80V100H20L0 80V20Z'},
- K:{w:90,d:'M0 0H28V38L56 0H90L52 46L90 100H56L30 62L28 66V100H0Z'},
- E:{w:78,d:'M0 0H78V24H28V38H68V60H28V76H78V100H0Z'},
- T:{w:84,d:'M0 0H84V24H56V100H28V24H0Z'},
- A:{w:90,d:'M30 0H60L90 100H60L56 84H34L30 100H0ZM40 62H50L45 34Z',rule:'evenodd'},
- N:{w:88,d:'M0 0H28L60 52V0H88V100H60L28 48V100H0Z'}
-};
-function word(text,{x,y,height,gap,fill,id}){
- const k=height/100;let cursor=0,out='';
- for(const ch of text){const l=LETTERS[ch];out+=`<path transform="translate(${cursor} 0)" d="${l.d}" ${l.rule?`fill-rule="${l.rule}"`:''}/>`;cursor+=l.w+gap}
- const width=(cursor-gap)*k;
- return{svg:`<g transform="translate(${x-width/2} ${y}) scale(${k}) skewX(-12)" fill="${fill}">${out}</g>`,width,height};
-}
-export function logoSVG({id='ra',car='./assets/logo-car.png',tagline=true}={}){
+// Logotipo de Rocket Arena. Tipografía convertida a trazos (Inter Display Black, licencia OFL), sin depender de fuentes.
+const ROCKET='M80 1490H496V1024H682L905 1490H1338L1065 934C1210 848 1292 705 1292 520C1292 201 1069 0 713 0H80ZM496 702V338H682C807 338 886 411 886 520C886 629 807 702 682 702Z M2086 1514C2491 1514 2810 1243 2810 746C2810 248 2491 -24 2086 -24C1679 -24 1362 248 1362 746C1362 1240 1679 1514 2086 1514ZM2086 1154C1891 1154 1782 1003 1782 746C1782 488 1891 336 2086 336C2282 336 2390 488 2390 746C2390 1003 2282 1154 2086 1154Z M3573 1514C3954 1514 4223 1282 4265 930H3846C3820 1070 3724 1154 3581 1154C3378 1154 3269 1006 3269 746C3269 485 3379 336 3581 336C3724 336 3821 421 3846 562H4265C4224 210 3954 -24 3573 -24C3166 -24 2849 248 2849 746C2849 1240 3166 1514 3573 1514Z M4342 1490H4758V1144L4939 922L5279 1490H5755L5207 640L5727 0H5246L4950 383C4886 466 4822 548 4758 631V0H4342Z M5794 1490H6948V1138H6210V916H6891V576H6210V352H6948V0H5794Z M7007 352H7431V1490H7847V352H8271V0H7007Z';
+const ARENA_A='M-87 1490H381L495 1245H993L1023 1490H1478L1220 0H660ZM644 925 650 912C734 732 813 558 891 377C909 558 930 732 952 912L954 925Z M1486 1490H1902L1979 1024H2172L2318 1490H2742L2561 935C2721 849 2828 705 2859 520C2911 201 2721 0 2366 0H1733ZM2033 702 2093 338H2279C2404 338 2471 411 2453 520C2435 629 2343 702 2218 702Z';
+const ARENA_B='M2778 1490H3932L3990 1138H3252L3289 916H3970L4026 576H3345L3382 352H4120L4178 0H3025Z M3995 1490H4411L4501 946C4511 886 4530 769 4548 635C4597 764 4644 879 4675 946L4923 1490H5347L5594 0H5178L5087 546C5076 617 5057 739 5040 860C5000 752 4957 641 4932 585L4666 0H4242Z M5356 1490H5824L5938 1245H6436L6466 1490H6921L6663 0H6103ZM6087 925 6093 912C6177 732 6256 558 6334 377C6352 558 6373 732 6395 912L6397 925Z';
+export function logoSVG({id='ra',tagline=true}={}){
  const u=n=>`${id}-${n}`;
- const rocket=word('ROCKET',{x:500,y:326,height:116,gap:13,fill:`url(#${u('rocket')})`});
- const arena=word('ARENA',{x:500,y:466,height:54,gap:24,fill:`url(#${u('arena')})`});
- const hexPts=[[500,10],[760,150],[760,320],[500,452],[240,320],[240,150]].map(p=>p.join(',')).join(' ');
- return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 ${tagline?585:545}" role="img" aria-label="Rocket Arena">
+ const kr=0.10588,ka=0.08847,rw=880.0,aw=620.0,rh=157.8,ah=131.8;
+ const rx=(1000-rw)/2,ry=46,ax=(1000-aw)/2+8,ay=ry+rh+22;
+ const H=tagline?440:392;
+ const px=rx-34,py=ry-30,pw=rw+68,ph=rh+60,cut=24;
+ const plate=`M${px+cut} ${py}H${px+pw-cut}L${px+pw} ${py+cut}V${py+ph}H${px}V${py+cut}Z`;
+ const rg=`translate(${rx} ${ry}) scale(${kr})`,ag=`translate(${ax} ${ay}) scale(${ka})`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 ${H}" role="img" aria-label="Rocket Arena">
 <defs>
- <linearGradient id="${u('rocket')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#bfe7ff"/><stop offset=".5" stop-color="#4fa9ff"/><stop offset="1" stop-color="#0d56e0"/></linearGradient>
- <linearGradient id="${u('arena')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset=".5" stop-color="#ffab2e"/><stop offset="1" stop-color="#ff4d0f"/></linearGradient>
- <linearGradient id="${u('ringL')}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3cc8ff"/><stop offset="1" stop-color="#1457ff"/></linearGradient>
- <linearGradient id="${u('ringR')}" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf4a"/><stop offset="1" stop-color="#ff4d0f"/></linearGradient>
- <radialGradient id="${u('aura')}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#2d7bff" stop-opacity=".55"/><stop offset=".6" stop-color="#1b4fd0" stop-opacity=".18"/><stop offset="1" stop-color="#1b4fd0" stop-opacity="0"/></radialGradient>
- <radialGradient id="${u('auraO')}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff8a2a" stop-opacity=".5"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>
- <linearGradient id="${u('streak')}" x1="0" x2="1"><stop offset="0" stop-color="#7fd6ff" stop-opacity="0"/><stop offset="1" stop-color="#e6f7ff"/></linearGradient>
- <filter id="${u('glow')}" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
- <filter id="${u('soft')}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14"/></filter>
- <mask id="${u('cut')}" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="585"><rect width="1000" height="585" fill="#fff"/><path d="M0 396H1000V401H0Z" fill="#000"/></mask>
+ <linearGradient id="${u('o')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a00"/><stop offset=".5" stop-color="#ffb42e"/><stop offset=".5" stop-color="#ff5b00"/><stop offset="1" stop-color="#ff8a1a"/></linearGradient>
+ <linearGradient id="${u('b')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a9bff"/><stop offset=".5" stop-color="#58d8ff"/><stop offset=".5" stop-color="#0a55e8"/><stop offset="1" stop-color="#1c8bff"/></linearGradient>
+ <g id="${u('rk')}" transform="${rg}"><path d="${ROCKET}"/></g>
+ <g id="${u('ao')}" transform="${ag}"><path d="${ARENA_A}"/></g>
+ <g id="${u('ab')}" transform="${ag}"><path d="${ARENA_B}"/></g>
+ <clipPath id="${u('c')}"><path d="M0 0H1000V${H}H0Z"/></clipPath>
 </defs>
-<ellipse cx="500" cy="240" rx="360" ry="230" fill="url(#${u('aura')})"/>
-<ellipse cx="640" cy="300" rx="260" ry="120" fill="url(#${u('auraO')})" opacity=".6"/>
-<!-- emblema hexagonal -->
-<g fill="none" stroke-linejoin="round">
- <polygon points="${hexPts}" stroke="#04101f" stroke-width="16" opacity=".55"/>
- <path d="M500 10L240 150V320L500 452" stroke="url(#${u('ringL')})" stroke-width="9" filter="url(#${u('glow')})"/>
- <path d="M500 10L760 150V320L500 452" stroke="url(#${u('ringR')})" stroke-width="9" filter="url(#${u('glow')})"/>
- <polygon points="${[[500,34],[738,162],[738,308],[500,430],[262,308],[262,162]].map(p=>p.join(',')).join(' ')}" stroke="#9fd8ff" stroke-width="1.6" opacity=".35"/>
+<g stroke-linejoin="miter" stroke-miterlimit="3">
+ <path d="${plate}" fill="#fff" stroke="#fff" stroke-width="8"/>
+ <use href="#${u('ao')}" fill="#fff" stroke="#fff" stroke-width="${(23/ka).toFixed(0)}"/><use href="#${u('ab')}" fill="#fff" stroke="#fff" stroke-width="${(23/ka).toFixed(0)}"/>
+ <path d="${plate}" fill="#06090f"/>
+ <use href="#${u('ao')}" fill="#06090f" stroke="#06090f" stroke-width="${(14/ka).toFixed(0)}"/><use href="#${u('ab')}" fill="#06090f" stroke="#06090f" stroke-width="${(14/ka).toFixed(0)}"/>
 </g>
-<!-- líneas de velocidad -->
-<g stroke-linecap="round">
- <path d="M30 190H300" stroke="url(#${u('streak')})" stroke-width="5"/><path d="M80 214H300" stroke="url(#${u('streak')})" stroke-width="3"/>
- <path d="M0 238H260" stroke="url(#${u('streak')})" stroke-width="3"/><path d="M110 262H290" stroke="url(#${u('streak')})" stroke-width="2.5"/>
- <path d="M760 130H1000" stroke="url(#${u('streak')})" stroke-width="3" transform="rotate(180 880 130)" opacity=".8"/>
-</g>
-<!-- coche -->
-<ellipse cx="500" cy="352" rx="240" ry="14" fill="#000" opacity=".55" filter="url(#${u('soft')})"/>
-<image href="${car}" x="228" y="16" width="544" height="335" preserveAspectRatio="xMidYMid meet"/>
-<!-- palabras -->
-<g mask="url(#${u('cut')})" filter="url(#${u('glow')})">
- <g transform="translate(5 6)" opacity=".7" fill="#031433">${rocket.svg.replace(`url(#${u('rocket')})`,'#031433')}</g>
- ${rocket.svg}
-</g>
-<g filter="url(#${u('glow')})">
- <g transform="translate(3 4)" opacity=".7">${arena.svg.replace(`url(#${u('arena')})`,'#4a1500')}</g>
- ${arena.svg}
-</g>
-<g stroke="#2fa8ff" stroke-width="3" stroke-linecap="round"><path d="M96 493H312"/></g>
-<g stroke="#ff8a1f" stroke-width="3" stroke-linecap="round"><path d="M688 493H904"/></g>
-<path d="M326 493l8-8 8 8-8 8Z" fill="#4fc4ff"/><path d="M658 493l8-8 8 8-8 8Z" fill="#ffab2e"/>
-${tagline?`<text x="500" y="568" text-anchor="middle" font-family="'Segoe UI','Arial',sans-serif" font-weight="700" font-size="22" letter-spacing="9" fill="#9fb8cf">BOOST  ·  FLY  ·  SCORE</text>`:''}
+<use href="#${u('rk')}" fill="#fff"/>
+<use href="#${u('ao')}" fill="url(#${u('o')})"/><use href="#${u('ab')}" fill="url(#${u('b')})"/>
+${tagline?`<text x="500" y="${H-16}" text-anchor="middle" font-family="'Barlow Condensed','Arial Narrow',Arial,sans-serif" font-weight="700" font-size="22" letter-spacing="14" fill="#b9cad9">BOOST · FLY · SCORE</text>`:''}
 </svg>`;
 }
 // Marca pequeña (favicon / menú): hexágono azul-naranja con rayo de turbo.

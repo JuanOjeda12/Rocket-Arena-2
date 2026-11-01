@@ -13,11 +13,11 @@ const STYLE=`
 #intro .fade{position:absolute;inset:0;background:#000;opacity:1}
 #intro .flash{position:absolute;inset:0;background:radial-gradient(circle,#fff 0,#bfe6ff 35%,#2a7bff00 75%);opacity:0}
 #intro .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0000 55%,#000b 100%);transition:background 1s}
-#intro.logo-on .vignette{background:radial-gradient(ellipse at center,#030a16cc 15%,#000000f2 100%)}
-#intro .logo{position:absolute;left:50%;top:50%;width:min(78vw,1100px);transform:translate(-50%,-50%) scale(1.5);opacity:0;filter:blur(18px) drop-shadow(0 0 40px #2a7bff88)}
+#intro.logo-on .vignette{background:none}
+#intro .logo{position:absolute;left:50%;top:50%;width:min(66vw,900px);transform:translate(-50%,-50%);opacity:0}
 #intro .logo svg{display:block;width:100%;height:auto}
-#intro .logo.show{animation:introLogo 1.1s cubic-bezier(.12,.8,.2,1) forwards}
-@keyframes introLogo{0%{opacity:0;transform:translate(-50%,-50%) scale(1.6);filter:blur(22px) drop-shadow(0 0 80px #fff)}35%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0) drop-shadow(0 0 36px #2a7bff88)}}
+#intro .logo.show{animation:introLogo .4s ease-out forwards}
+@keyframes introLogo{0%{opacity:0}100%{opacity:1}}
 #intro .caption{position:absolute;left:50%;bottom:15vh;transform:translateX(-50%);font-size:clamp(14px,1.7vw,24px);letter-spacing:.6em;font-weight:700;color:#cfe6fa;text-shadow:0 0 18px #2a7bff;opacity:0;transition:opacity .8s}
 #intro .skip{position:absolute;right:3vw;bottom:3vh;font-size:13px;letter-spacing:.14em;color:#9fb8cf;opacity:.0;transition:opacity .8s;text-transform:uppercase}
 #intro .skip kbd{border:1px solid #9fb8cf88;padding:2px 7px;border-radius:4px;margin-right:6px}
@@ -125,8 +125,8 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   if(carInfo){
    const pass=carInfo.pass,since=t-pass;
    if(since>-.25)sound('whoosh',()=>{audio.noise(1.4,.7,3600);audio.tone(300,.9,.18,'sawtooth',60)});
-   flash.style.opacity=since>0&&since<.6?String(1-since/.6):'0';
-   if(since>=.12&&t<T0.end){if(!logo.classList.contains('show')){logo.classList.add('show');root.classList.add('logo-on');sound('logo',()=>{audio.tone(60,1.6,.9,'sine',26);audio.noise(1.3,.5,2600);for(const f of [261.6,392,523.2,784])audio.tone(f,1.8,.09)})}}
+   flash.style.opacity='0';
+   if(since>=.12&&t<T0.end){if(since<.5||true){fade.style.transition='none';fade.style.opacity=1}if(!logo.classList.contains('show')){logo.classList.add('show');root.classList.add('logo-on');sound('logo',()=>{audio.tone(60,1.6,.9,'sine',26);audio.noise(1.3,.5,2600);for(const f of [261.6,392,523.2,784])audio.tone(f,1.8,.09)})}}
   }
   if(t>=T0.end)finish();
  }

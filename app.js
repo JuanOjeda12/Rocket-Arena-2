@@ -41,7 +41,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
    await intro.start();
   }catch(e){console.error(e)}
   front.hidden=false;loading=false;tutorialRun=true;await offline({blue:1,orange:0,training:true,tutorial:true});
-  if(screen==='game'||running){tutorial.start(skipped=>{markTutorial();tutorialRun=false;setTimeout(()=>{if(tutorial.done&&offlineOptions?.tutorial&&screen==='game')leaveRoom()},8000)})}else tutorialRun=false;
+  if(screen==='game'||running){tutorial.start(skipped=>{markTutorial();tutorialRun=false;setTimeout(()=>{if(tutorial.done&&offlineOptions?.tutorial&&screen==='game')leaveRoom()},9500)})}else tutorialRun=false;
  }
  const flipIndicator=new FlipResetIndicator(scene);const post=new PostMatch(),audio=new GameAudio(),podium=new T.Group();scene.add(podium);podium.visible=false;const podiumPoses=new Map();for(let i=0;i<5;i++){const shadow=new T.Mesh(new T.PlaneGeometry(1.7,2.1),new T.MeshBasicMaterial({map:softGlow(),color:0x000000,transparent:true,opacity:.3,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.002;podium.add(shadow)}
  addEventListener('pointerdown',()=>audio.unlock(),{passive:true});addEventListener('keydown',()=>audio.unlock());
@@ -248,7 +248,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   $('hud').hidden=!inMatch;
   $('save-award').hidden=!inMatch||elapsed>awardUntil||awardUntil===0;
   effects.update(inMatch&&source==='offline'&&!running&&screen!=='results'?0:dt,inMatch||['inventory','drop'].includes(screen));
-  if(source==='offline'&&simulation&&(running||screen==='podium'||screen==='results')){const controls=readInput();acc+=dt;while(acc>=1/120){simulation.tick(1/120,{[slot]:controls});acc-=1/120}const next=simulation.view();stateA=stateB?.phase===next.phase?stateB:next;stateB=next}
+  if(source==='offline'&&simulation&&(running||screen==='podium'||screen==='results')){let ctl=readInput();const tut=tutorial?.active&&running&&!tutorial.done;if(tut&&stateB){const me=stateB.cars.find(c=>c.slot===slot);if(me&&stateB.phase==='live')ctl=tutorial.control(ctl,me,stateB,dt)}acc+=dt*(tut?tutorial.timeScale:1);while(acc>=1/120){simulation.tick(1/120,{[slot]:ctl});acc-=1/120}const next=simulation.view();stateA=stateB?.phase===next.phase?stateB:next;stateB=next}
   if(source==='network'&&netB){stateA=netA||netB;stateB=netB;if((running||screen==='podium')&&now-lastInput>1000/30){network.send('input',{controls:readInput()});lastInput=now}}
   if(source==='network'&&['podium','results'].includes(screen)&&stateB?.phase!=='finished'){lastPhase='';session.start()}
   if(inMatch&&stateB){post.observe(stateB,running||source==='network'?dt:0);if(screen!=='results'&&screen!=='podium')paint(stateA||stateB,stateB,source==='network'?Math.min(1,(now-netAt)/(1000/30)):1);if(stateB.phase==='finished'&&lastPhase!=='finished'){hub.finish(stateB,slot);post.finish(stateB,slot);screen='podium';paintPost.clip=null;paintPost.podiumReady=false;podiumPoses.clear();session.pause('finished');renderFront()}lastPhase=stateB.phase}
@@ -260,7 +260,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   if(!inMatch||screen==='podium')flipIndicator.update([],views,dt,'menu',slot);
   audio.update(stateB,slot,inMatch&&(running||source==='network'||screen==='results'||screen==='podium'),dt);
   const night=!!offlineOptions?.tutorial&&inMatch;stadium.update(night?0:inMatch?stateB.remaining:300,night?false:inMatch?stateB.training:true,night||inMatch&&stateB.overtime,elapsed);
-  if(tutorial?.active&&inMatch&&stateB){const me=stateB.cars.find(c=>c.slot===slot);tutorial.update(me,stateB,dt,running)}
+  tutorial?.update();
   if(!painted)vfx.idle(dt);
   renderer.render(scene,camera);
   if(now-statsAt>1000){statsAt=now;canvas.dataset.renderStats=JSON.stringify({fps:Math.round(1000/renderBudget.average),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio:Number(renderBudget.ratio.toFixed(2)),crowd:stadium.crowdCount,crowdTriangles:stadium.crowdTriangles})}
