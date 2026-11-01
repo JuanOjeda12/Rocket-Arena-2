@@ -1,23 +1,27 @@
 # Cómo subir esta actualización
 
-1. Sube el CONTENIDO de esta carpeta a la raíz del repositorio (rama main), reemplazando los archivos repetidos. Son 5 archivos que van al repositorio: `intro.js`, `intro-track.json` (nuevo), `app.js`, `game.js` e `index.html`. No subas este `LEEME-SUBIR.md`.
+1. Sube el CONTENIDO de esta carpeta a la raíz del repositorio (rama main), reemplazando los archivos repetidos. Son 5 archivos: `intro.js`, `intro-track.json` (nuevo, ~600 KB), `app.js`, `game.js` e `index.html`. No subas este `LEEME-SUBIR.md`.
 2. Espera a que GitHub Pages termine de publicar y recarga con Ctrl+F5.
 
-El resto del repositorio no cambia. `tutorial.js`, `autopilot.js` y `fans.js` ya no se usan para la introducción y se pueden dejar donde están.
+El resto del repositorio no cambia.
 
-## Qué cambió respecto a la versión anterior
+## Qué es ahora la cinemática (desde el segundo 19,6)
 
-El tramo de 19,6 s hasta el final **ya no coloca coches ni balón a mano**. Cada escena es una mini-simulación con el motor de física del juego (RocketSim), con bots que siguen un guion, y `intro-track.json` guarda el resultado. `intro.js` solo reproduce esa grabación, coloca la cámara y dispara los efectos.
+Una **sola partida 2v2 real y continua**, con los 4 coches siempre presentes (2 azules, 2 naranjas). Se simuló con el motor de física del juego (RocketSim) y se grabó en `intro-track.json`; `intro.js` solo la reproduce. Los coches y el balón se mueven únicamente por la física: no hay posiciones colocadas a mano.
 
-- **Saque (19,6–23,9 s):** un saque real de bots Nexto 3v3, con la demolición que ocurre sola.
-- **Escenas sueltas (23,9–30,7 s):** balón rodando, Octane naranja avanzando, balón botando, dos demoliciones con un coche volcado, el Octane azul por la banda con salto y golpe aéreo, y el derrape del naranja. Todas con física real.
-- **Tutorial (30,7–61,7 s):** una jugada real del Octane azul (conducir, saltar, turbo, voltereta y gol a ~59,7 s), más un rival naranja y un coche oscuro que no tocan el balón. Los avisos congelan la escena por completo hasta que pulsas la tecla.
-- **Antes del saque (0–19,6 s):** igual que la versión anterior (logo, título, recorrido, cartel, coches y cuenta atrás).
+La partida se construyó **por tramos**: cada tramo se buscó (probando variantes de lo que hacen los bots) hasta que ocurrió lo que muestra el video, se fijó, y el siguiente tramo se buscó a partir de ahí:
 
-## Qué no es idéntico al video
-- No son los mismos movimientos exactos: la física es real, así que un choque o un rebote puede salir un poco distinto al del video.
+1. Saque: un coche naranja gana el balón y el balón sube hacia él.
+2. Ese coche naranja es demolido por un coche azul (a ~4,3 s de partida). Es la **única demolición**.
+3. Un coche gira en el aire (~6 s).
+4. El coche azul golpea el balón en el aire (~9 s de partida).
+5. Tutorial (desde los 11 s de partida): el coche azul conduce, salta, usa turbo y hace la voltereta que termina en gol, con los avisos congelando la partida hasta que pulsas la tecla. Un rival naranja escolta y otro cae cerca de la portería sin tocar el balón.
+
+Para pasar de "segundos de partida" a "segundos del video" suma 19,6.
+
+## Lo que falta / es provisional
+- **Cámara:** por ahora una sola cámara general provisional (y persecución en el tutorial). Los planos cinemáticos se afinarán después.
+- **Tiempos:** los hitos caen cerca del video pero no al segundo (por ejemplo, el golpe aéreo cae ~1 s más tarde).
+- **Teletransporte único:** al empezar el tutorial (11 s de partida) el coche azul y el balón se recolocan para que la jugada del tutorial salga como en el video; es el único salto de toda la partida.
 - Los logos son los de Rocket Arena, no los del video.
-- Las posiciones de cámara están ajustadas a ojo con las imágenes de referencia (`REFERENCIA-VIDEO/`); algunos planos pueden necesitar retoques.
-
-## Ajustes rápidos
-En `intro.js`, la lista de planos (`sh('k1',...)`) define cuánto dura cada plano, de qué escena sale y su cámara. Si un plano no te gusta, dime su nombre (k1…k18, d1…d21) y lo ajusto.
+- Se descartó la pieza "balón rodando bajo" (video 24 s) porque bloqueaba la búsqueda.

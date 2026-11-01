@@ -150,7 +150,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  // Cuenta atrás 3-2-1 (16.9 / 17.9 / 18.9 s del vídeo); el 3 ya aparece sobre el último plano del coche naranja.
  function digit(){const n=t<16.9||t>=TIMELINE.kick?0:t<17.9?3:t<18.9?2:1;if(n&&n!==lastCount){lastCount=n;count.textContent=n;count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');audio.tone(n===1?880:660,.35,.28,'sine')}}
  // Pantalla de título (2.4–4.4 s del vídeo): cámara baja ante la pared de marcador y el balón en primer plano.
- function titleShot(){const k=Math.min(1,Math.max(0,(t-2.0)/2.4));ball.visible=true;ballShadow.visible=true;ball.position.set(5.5,.9125,10);ballShadow.position.set(5.5,.015,10);ballShadow.material.opacity=.22;[B,O,D,W].forEach(a=>a?.setVisible(false,false));camera.position.set(lerp(-5,-3,k),lerp(1.3,1.6,k),lerp(20,17,k));camera.up.set(0,1,0);camera.lookAt(1,lerp(7,6.5,k),-34);camera.fov=58}
+ function titleShot(){const k=Math.min(1,Math.max(0,(t-2.0)/2.4));ball.visible=true;ballShadow.visible=true;ball.position.set(5.5,.9125,10);ballShadow.position.set(5.5,.015,10);ballShadow.material.opacity=.22;ALL().forEach(a=>a?.setVisible(false,false));camera.position.set(lerp(-5,-3,k),lerp(1.3,1.6,k),lerp(20,17,k));camera.up.set(0,1,0);camera.lookAt(1,lerp(7,6.5,k),-34);camera.fov=58}
  // Tarjeta de estudio (0–1.9 s), título (2.0–4.4 s) y negro (4.4–9.4 s).
  function stage(){
   const T0=TIMELINE,op=(el,v)=>{el.style.opacity=v.toFixed(3)};
@@ -158,16 +158,15 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   op(titlecard,ramp(t,T0.title+.05,T0.title+.4)*(1-ramp(t,3.7,4.3)));op(press,ramp(t,2.2,2.5));
   fade.style.opacity=t<2.4?'1':t<3.7?String(1-ramp(t,2.4,2.6)):t<T0.aerial?String(ramp(t,3.7,4.4)):'0';
  }
- // ───────── Cinemática real: escenas simuladas con el motor del juego (RocketSim) y cámaras de dirección ─────────
- // Cada escena (intro-track.json) es una mini-simulación con física real; aquí solo se reproduce, se coloca la cámara
- // y se disparan efectos (explosiones, gol). El jugador solo desbloquea los avisos.
+ // ───────── Partida real 2v2 (simulada con el motor del juego y grabada) ─────────
+ // intro-track.json guarda UNA partida continua de 4 coches. Aquí solo se reproduce: los coches y el balón se mueven por la física grabada.
+ // Los avisos congelan la partida hasta que el jugador pulsa la tecla. Cámara provisional (se afinará después).
  const L=(a,b,k)=>a+(b-a)*k,E=smooth,clamp01=k=>Math.min(1,Math.max(0,k));
  const frameCars=[];
  const V3=T.Vector3,Q4=T.Quaternion;
- const carS=Array.from({length:6},()=>({p:new V3(),q:new Q4(),v:new V3(),f:new V3(),fl:0,boost:0}));
+ const carS=Array.from({length:4},()=>({p:new V3(),q:new Q4(),v:new V3(),f:new V3(),fl:0,boost:0}));
  const ballS={p:new V3(),q:new Q4(),v:new V3()};
  const qa=new Q4(),qb=new Q4(),tA=new V3(),tB=new V3();
- // Interpola el fotograma grabado (60 Hz) de la escena en el instante `time`.
  function sample(sc,time){
   const n=sc.n,hz=sc.hz,x=Math.max(0,Math.min(n-1.0001,time*hz)),i=x|0,k=x-i,A=sc.frames[i],Bf=sc.frames[i+1],ns=sc.slots.length;
   for(let c=0;c<ns;c++){const o=c*9,s=carS[sc.slots[c]];
@@ -181,103 +180,61 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   ballS.v.set((Bf[o]-A[o])*hz,(Bf[o+1]-A[o+1])*hz,(Bf[o+2]-A[o+2])*hz);
   qa.set(A[o+3],A[o+4],A[o+5],A[o+6]);qb.set(Bf[o+3],Bf[o+4],Bf[o+5],Bf[o+6]);ballS.q.copy(qa).slerp(qb,k);
  }
- const bigFlame=new Set(),hideCar=new Set();let goalAt=0;
- const VEH=()=>[B,D,R,O,W,X];
- // Muestra la escena `id` en su tiempo `time`; `vis` son los puestos visibles.
- function show(id,time,vis){
-  const sc=TRK[id];sample(sc,time);const veh=VEH();
+ const bigFlame=new Set();let goalAt=0;
+ const VEH=()=>[B,R,O,W];
+ // Muestra la partida en el instante `time` (segundos de juego). Siempre se ven los 4 coches.
+ function show(time){
+  const sc=TRK.G;sample(sc,time);const veh=VEH();
   for(const k of sc.slots){const v=veh[k],s=carS[k];if(!v)continue;
-   const dem=!!(s.fl&8),boost=!!(s.fl&2)&&!dem,on=vis.includes(k);
-   v.root.position.copy(s.p);v.root.quaternion.copy(s.q);v.setVisible(on&&!dem&&!hideCar.has(v),false);
-   v.flame.visible=on&&boost;v.flame.scale.setScalar(bigFlame.has(v)?3.4:1);v.update(time);
-   if(on&&boost)frameCars.push({a:v,state:{slot:k,team:k<3?0:1,onGround:!!(s.fl&1),isBoosting:true,isFlipping:!!(s.fl&4),isDemoed:false,boost:s.boost,position:s.p.toArray(),velocity:s.v.toArray(),forward:{x:s.f.x,y:s.f.y,z:s.f.z}}});
+   const dem=!!(s.fl&8),boost=!!(s.fl&2)&&!dem;
+   v.root.position.copy(s.p);v.root.quaternion.copy(s.q);v.setVisible(!dem,false);
+   v.flame.visible=boost;v.flame.scale.setScalar(bigFlame.has(v)?3.4:1);v.update(time);
+   if(boost)frameCars.push({a:v,state:{slot:k,team:k<2?0:1,onGround:!!(s.fl&1),isBoosting:true,isFlipping:!!(s.fl&4),isDemoed:false,boost:s.boost,position:s.p.toArray(),velocity:s.v.toArray(),forward:{x:s.f.x,y:s.f.y,z:s.f.z}}});
   }
   ball.visible=true;ballShadow.visible=true;ball.position.copy(ballS.p);ball.quaternion.copy(ballS.q);ballShadow.position.set(ballS.p.x,.015,ballS.p.z);ballShadow.material.opacity=Math.max(.04,.22-ballS.p.y*.008);
-  // Eventos reales de la simulación: demoliciones y gol.
+  // Eventos reales de la simulación: demolición y gol.
   for(const e of sc.events){if(e.t>(sc.last??-1)&&e.t<=time){
-   if(e.type==='demo'){boom('dm'+id+e.t+e.slot,e.p,1.5);burst('dms'+id+e.t+e.slot,e.p,[.45,.42,.4],140,6,1.4)}
-   if(e.type==='goal'){goalAt=T0V+e.t;boom('goal',[ballS.p.x,Math.max(1.4,ballS.p.y),Math.min(ballS.p.z,-51.5)],2.1);burst('g2',[ballS.p.x,2,-52],[1,.55,.1],300,18,1.3);burst('g3',[ballS.p.x,2,-51.5],[.55,.38,.2],220,7,2.2)}
+   if(e.type==='demo'){boom('dm'+e.t+e.slot,e.p,1.5);burst('dms'+e.t+e.slot,e.p,[.45,.42,.4],140,6,1.4)}
+   if(e.type==='goal'){goalAt=e.t;boom('goal',[ballS.p.x,Math.max(1.4,ballS.p.y),Math.min(ballS.p.z,-51.5)],2.1);burst('g2',[ballS.p.x,2,-52],[1,.55,.1],300,18,1.3);burst('g3',[ballS.p.x,2,-51.5],[.55,.38,.2],220,7,2.2)}
   }}
   sc.last=time;
  }
- const T0V=30.7;
  const burst=(key,c,rgb,n,sp,ttl)=>once(key,()=>bursts.add(c,rgb,n,sp,ttl));
  const boom=(key,c,big=1)=>once(key,()=>{bursts.add(c,[1,.72,.28],Math.round(420*big),16*big,1.6);bursts.add(c,[1,1,.9],Math.round(160*big),26*big,.8);audio.noise(1.6,.9,900);audio.tone(55,1,.7,'sine',22);flash.style.transition='none';flash.style.opacity=.85;requestAnimationFrame(()=>{flash.style.transition='opacity .6s';flash.style.opacity=0})});
  const goTxt=()=>once('go',()=>{count.textContent='GO!';count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');audio.tone(990,.4,.25,'sine')});
- // Cámaras: relativas a lo que pasa en la simulación.
- // La cámara nunca sale del estadio (elipse de 40 x 50 m): si el punto queda fuera, se acerca al centro.
- const cam=(px,py,pz,lx,ly,lz,fov=50)=>{const q=(px/40)*(px/40)+(pz/50)*(pz/50);if(q>.88){const k=Math.sqrt(.88/q);px*=k;pz*=k}camera.position.set(px,Math.max(.4,py),pz);camera.up.set(0,1,0);camera.lookAt(lx,ly,lz);camera.fov=fov};
- const camV=(p,l,fov=50)=>cam(p.x,p.y,p.z,l.x,l.y,l.z,fov);
- const rightOf=(f,o)=>o.set(-f.z,0,f.x).normalize();
- const inner=(x,z)=>(x/40)*(x/40)+(z/52)*(z/52);
- // Al lado del coche (por el lado del centro del campo), mirando un poco por delante.
- const side=(c,dist,h,ahead,fov)=>{rightOf(c.f,tA);const px=c.p.x+tA.x*dist,pz=c.p.z+tA.z*dist,mx=c.p.x-tA.x*dist,mz=c.p.z-tA.z*dist,sg=inner(px,pz)<=inner(mx,mz)?1:-1;tA.multiplyScalar(dist*sg).add(c.p);tA.y=h;tB.copy(c.f).multiplyScalar(ahead*.3).add(c.p);tB.y=Math.max(.5,c.p.y+.4);camV(tA,tB,fov)};
- const chase=(c,back,up,ahead,fov)=>{tA.copy(c.f).setY(0).normalize();const fx=tA.x,fz=tA.z;tB.set(c.p.x-fx*back,c.p.y+up,c.p.z-fz*back);tA.set(c.p.x+fx*ahead,c.p.y+.7,c.p.z+fz*ahead);camV(tB,tA,fov)};
- const front34=(c,dist,h,off,fov)=>{tA.copy(c.f).setY(0).normalize();rightOf(tA,tB);tB.multiplyScalar(off).add(c.p).addScaledVector(tA,dist);tB.y=h;tA.copy(c.p);tA.y+=.55;camV(tB,tA,fov)};
- const lookBall=(px,py,pz,fov=56,dy=0)=>cam(px,py,pz,ballS.p.x,ballS.p.y+dy,ballS.p.z,fov);
- const lookCar=(px,py,pz,c,fov=56,dy=.6)=>cam(px,py,pz,c.p.x,c.p.y+dy,c.p.z,fov);
- let curShot='';const SM={p:new V3(),l:new V3(),id:''},mid=new V3();
- const follow=(pos,look,fov,sm=.18)=>{if(SM.id!==curShot){SM.p.copy(pos);SM.l.copy(look);SM.id=curShot}else{SM.p.lerp(pos,sm);SM.l.lerp(look,sm)}camV(SM.p,SM.l,fov)};
- const watch=(target,dist,h,fov=58,dy=0,sm=.16)=>{tA.set(-target.x,0,-target.z);if(tA.lengthSq()<1)tA.set(0,0,1);tA.normalize();tB.set(target.x+tA.x*dist,Math.max(.5,h),target.z+tA.z*dist);tA.set(target.x,target.y+dy,target.z);follow(tB,tA,fov,sm)};
- const S=[];let vAcc=19.6;
- // sh(id, duración, escena, t0 de escena, velocidad, visibles, cámara)
- const sh=(id,dur,sc,m0,rate,vis,cm,o={})=>{const v0=vAcc,run=o.tut?cm:(k,st,v)=>{show(sc,m0+(v-v0)*rate,vis);if(o.go&&k>.55)goTxt();cm(k,st,v)};const {tut,go,...rest}=o;S.push({id,dur,run,v0,...rest});vAcc+=dur};
- const ALLV=[0,1,2,3,4,5];
- // ── Montaje del saque (19.6–23.9): partido Nexto real, grabado ──
- sh('k1',.5,'M',0,1,ALLV,()=>{side(carS[3],3.8,.55,2.5,56)},{go:true});
- sh('k2',.3,'M',.5,1,ALLV,()=>{side(carS[3],3.4,.6,2.5,58)});
- sh('k3',.5,'M',.8,1,ALLV,()=>{bigFlame.add(O);side(carS[3],5.2,.55,1,52)});
- sh('k4',.6,'M',1.3,1,ALLV,()=>{bigFlame.clear();cam(0,8.5,4.5,0,0,-.5,62)});
- sh('k5',.5,'M',1.9,1,ALLV,()=>{lookBall(1.8,1.0,7.5,58,.2)});
- sh('k6',1.1,'M',2.4,.66,ALLV,()=>{cam(-2,.7,-1,ballS.p.x*.55+carS[3].p.x*.45,Math.max(1.4,ballS.p.y*.5),ballS.p.z*.55+carS[3].p.z*.45,64)});
- sh('k7',.4,'M',3.13,1,ALLV,()=>{cam(-2.5,.9,8,-8,1.4,14.3,62)});
- sh('k8',.4,'M',3.5,1,ALLV,()=>{watch(ballS.p,12,2.2,62,.4)});
- // ── Escenas sueltas (cada una con su física real) ──
- sh('k9',.5,'B1',0,1,[],()=>{lookBall(5,.7,-9.5,56,.2)});
- sh('k10',.5,'B2',0,1,[3,1],()=>{side(carS[3],6,.9,3,58)});
- sh('k11',.2,'B2',.6,1,[3,1],()=>{watch(ballS.p,10,1.3,60)});
- sh('k12',.7,'B3',0,1,[],()=>{cam(-1.5,1.2,-1,ballS.p.x,ballS.p.y,ballS.p.z,60)});
- sh('k13',.4,'B4',.1,1,[2,0,1,3,4],()=>{lookCar(-9,1.6,29,carS[2],58,.4)});
- sh('k14',.6,'B4',.5,1,[2,0,1,3,4],()=>{cam(-8,1.4,17,-20.4,1,25.7,60)});
- sh('k15',.6,'B5',0,1,[0],()=>{side(carS[0],6.5,.55,3,62)});
- sh('k16',.8,'B5',.6,1,[0],()=>{mid.copy(carS[0].p).lerp(ballS.p,.5);watch(mid,14,2.8,62)});
- sh('k17',.9,'B5',1.4,1,[0],()=>{watch(ballS.p,16,2.2,60)});
- sh('k18',1.6,'B6',0,1,[3],()=>{side(carS[3],7,.8,4,58)});
- // ── Tutorial (30.7–61.7): partido real con el coche azul guiado por el guion ──
- const TT=(v)=>show('T',v-T0V,[0].concat(v>47.3&&v<52.3?[3]:[],v>=57.6?[5]:[]));
+ // Cámara provisional: nunca sale del estadio (elipse de 40 x 50 m).
+ const cam=(px,py,pz,lx,ly,lz,fov=50)=>{const q=(px/40)*(px/40)+(pz/50)*(pz/50);if(q>.88){const k=Math.sqrt(.88/q);px*=k;pz*=k}camera.position.set(px,Math.max(.6,py),pz);camera.up.set(0,1,0);camera.lookAt(lx,ly,lz);camera.fov=fov};
+ let curShot='';const SM={p:new V3(),l:new V3(),id:''};
+ const follow=(pos,look,fov,sm)=>{if(SM.id!==curShot){SM.p.copy(pos);SM.l.copy(look);SM.id=curShot}else{SM.p.lerp(pos,sm);SM.l.lerp(look,sm)}cam(SM.p.x,SM.p.y,SM.p.z,SM.l.x,SM.l.y,SM.l.z,fov)};
+ // Plano general que sigue la acción: entre el balón y el centro del campo, a media altura.
+ const wide=()=>{tA.copy(ballS.p);tB.set(-tA.x*.3,0,-tA.z*.3);const dx=tB.x,dz=tB.z;let l=Math.hypot(dx,dz);const ux=l>1?dx/l:0,uz=l>1?dz/l:1;
+  tB.set(tA.x+ux*24,12+Math.min(8,tA.y*.4),tA.z+uz*24);tA.set(ballS.p.x,Math.max(1,ballS.p.y*.7),ballS.p.z);follow(tB,tA,58,.07)};
+ // Persecución detrás del coche del jugador.
+ const chase=(c,back,up,ahead,fov)=>{tA.copy(c.f).setY(0).normalize();tB.set(c.p.x-tA.x*back,c.p.y+up,c.p.z-tA.z*back);const lk=new V3(c.p.x+tA.x*ahead,c.p.y+.8,c.p.z+tA.z*ahead);follow(tB,lk,fov,.2)};
+ const S=[];let vAcc=0;
+ const sh=(id,dur,cm,o={})=>{const v0=vAcc,run=(k,st,v)=>{show(v);if(o.go&&v>.3)goTxt();cm(k,st,v)};const {go,...rest}=o;S.push({id,dur,run,v0,...rest});vAcc+=dur};
+ const G0=11;
  const P=()=>carS[0];
- sh('ready',2.8,'T',0,1,[],(k,s,v)=>{hideCar.add(B);TT(v);const p0=TRK.T.p0;cam(L(p0.x-9,p0.x-5,E(k)),L(.55,2.2,E(k)),L(p0.z-10,p0.z+4,E(k)),L(-3,-8,E(k))+ballS.p.x*.3,L(3,6,E(k)),ballS.p.z,L(48,60,E(k)));ready.classList.toggle('on',k>.04&&k<.97)},{tut:true});
- sh('arrive',.9,'T',0,1,[],(k,s,v)=>{hideCar.delete(B);ready.classList.remove('on');TT(v);const p0=TRK.T.p0;cam(p0.x+.3,.6,p0.z+3.6,p0.x-3,3.2,p0.z-30,56)},{tut:true});
- sh('p1',.8,'T',0,1,[],(k,s,v)=>{TT(v);const p0=TRK.T.p0;cam(p0.x+.3,.6,p0.z+3.6,p0.x-3,3.2,p0.z-30,56)},{tut:true,prompt:{action:'forward',mode:'hold',text:a=>`Mantén ${a('forward')} para conducir.`}});
- sh('d1',2.2,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),7,.55,4,58)},{tut:true});
- sh('p2',.8,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),7,.55,4,58)},{tut:true,prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
- sh('d2',1.2,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),3.4,.6,10,64)},{tut:true});
- sh('d3',.3,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),2.4,.5,6,70)},{tut:true});
- sh('d4',1.4,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),5.5,.9,2,60)},{tut:true});
- sh('d5',1.1,'T',0,1,[],(k,s,v)=>{TT(v);lookBall(ballS.p.x-12,.6,ballS.p.z+6,52)},{tut:true});
- sh('d6',.3,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),4.4,.8,6,56)},{tut:true});
- sh('p3',.7,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),4.4,.8,6,56)},{tut:true,prompt:{action:'boost',mode:'hold',text:a=>`Mantén ${a('boost')} para usar el turbo.`}});
- sh('d7',2.1,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),5,1.7,14,60)},{tut:true});
- sh('d8',.4,'T',0,1,[],(k,s,v)=>{TT(v);bigFlame.add(B);side(P(),8,.5,1,58)},{tut:true});
- sh('d9',2.2,'T',0,1,[],(k,s,v)=>{bigFlame.clear();TT(v);lookBall(ballS.p.x+9,.45,ballS.p.z+11,58,.4)},{tut:true});
- sh('d10',1.4,'T',0,1,[],(k,s,v)=>{TT(v);lookBall(ballS.p.x-5,2.6,ballS.p.z+11,62,.8)},{tut:true});
- sh('d11',.2,'T',0,1,[],(k,s,v)=>{TT(v);cam(4,.65,16,0,3.3,-30,52)},{tut:true});
- sh('d12',.8,'T',0,1,[],(k,s,v)=>{TT(v);side(P(),7.5,1.1,6,56)},{tut:true});
- sh('d13',1,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),5.2,1.9,12,62)},{tut:true});
- sh('d14',.2,'T',0,1,[],(k,s,v)=>{TT(v);lookBall(0,.8,ballS.p.z+22,56,.4)},{tut:true});
- sh('d15',.9,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.7,P().p.z+8,P(),60,.8)},{tut:true});
- sh('p4',.7,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.7,P().p.z+8,P(),58,.8)},{tut:true,prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
- sh('d16',.8,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.8,P().p.z+8,P(),58,.8)},{tut:true});
- sh('p5',.9,'T',0,1,[],(k,s,v)=>{TT(v);lookCar(P().p.x-3,.8,P().p.z+8,P(),58,.8)},{tut:true,prompt:{action:'forward',mode:'dodge',text:a=>`Pulsa ${a('forward')} + ${a('jump')} para hacer la voltereta hacia delante.`}});
- sh('d17',.5,'T',0,1,[],(k,s,v)=>{TT(v);chase(P(),9,1.7,12,62)},{tut:true});
- sh('d18',.4,'T',0,1,[],(k,s,v)=>{goalword.classList.remove('on','r');TT(v);cam(16,1.1,-44.5,ballS.p.x,2.2,Math.min(ballS.p.z,-47),56)},{tut:true});
- sh('d19',.4,'T',0,1,[],(k,s,v)=>{TT(v);cam(16,1.1,-44.5,ballS.p.x,2.2,Math.min(ballS.p.z,-47),56)},{tut:true});
- sh('d20',.4,'T',0,1,[],(k,s,v)=>{TT(v);if(goalAt&&v>=goalAt-.05)goalword.classList.add('on','r');cam(16,1.1,-44.5,ballS.p.x,2.2,Math.min(ballS.p.z,-47),56)},{tut:true});
- sh('d21',1,'T',0,1,[],(k,s,v)=>{goalword.classList.remove('r');goalword.classList.add('on');TT(v);cam(0,.3,-31,-3,3.2,-52,46)},{tut:true});
- sh('end',.55,'T',0,1,[],(k,s,v)=>{goalword.classList.add('on');TT(v);front34(P(),6+k*3,.35,0,L(46,60,k*k))},{tut:true});
+ // Montaje del saque: la partida real desde el pitido inicial.
+ sh('play',G0,(k,s,v)=>{wide()},{go:true});
+ // Tutorial dentro de la misma partida.
+ sh('ready',2.8,(k,s,v)=>{wide();ready.classList.toggle('on',k>.04&&k<.97)});
+ sh('arrive',.9,(k,s,v)=>{ready.classList.remove('on');chase(P(),6,2.4,12,60)});
+ sh('p1',.8,(k,s,v)=>{chase(P(),6,2.4,12,60)},{prompt:{action:'forward',mode:'hold',text:a=>`Mantén ${a('forward')} para conducir.`}});
+ sh('d1',3.6,(k,s,v)=>{chase(P(),6,2.4,12,60)});
+ sh('p2',.8,(k,s,v)=>{chase(P(),6,2.4,12,60)},{prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
+ sh('d2',5.1,(k,s,v)=>{chase(P(),6,2.4,12,60)});
+ sh('p3',.7,(k,s,v)=>{chase(P(),6,2.4,12,60)},{prompt:{action:'boost',mode:'hold',text:a=>`Mantén ${a('boost')} para usar el turbo.`}});
+ sh('d3',9.2,(k,s,v)=>{chase(P(),6,2.4,12,60)});
+ sh('p4',.7,(k,s,v)=>{chase(P(),6,2.4,12,60)},{prompt:{action:'jump',mode:'press',text:a=>`Pulsa ${a('jump')} para saltar.`}});
+ sh('d4',1.5,(k,s,v)=>{chase(P(),6,2.4,12,60)});
+ sh('p5',.9,(k,s,v)=>{chase(P(),6,2.4,12,60)},{prompt:{action:'forward',mode:'dodge',text:a=>`Pulsa ${a('forward')} + ${a('jump')} para hacer la voltereta hacia delante.`}});
+ sh('d5',2.05,(k,s,v)=>{chase(P(),6,2.4,12,60)});
+ sh('goal',1.6,(k,s,v)=>{goalword.classList.add('on');wide()});
+ sh('end',.55,(k,s,v)=>{goalword.classList.add('on');wide()});
  const TOTAL_REL=()=>S.reduce((a,b)=>a+b.dur,0);
- let B=null,O=null,D=null,W=null,R=null,X=null,ready=null,goalword=null,TRK=null;
- const ALL=()=>[B,O,D,W,R,X].filter(Boolean);
+ let B=null,R=null,O=null,W=null,ready=null,goalword=null,TRK=null;
+ const ALL=()=>[B,R,O,W].filter(Boolean);
  const TRACK_URL=new URL('./intro-track.json?v=rl-20261101',import.meta.url);
  let st=0,idx=0,shotT=0,waiting=false,held=0,prevDown={},endPhase=0,endT=0;
  const downKeys=new Set();
@@ -325,9 +282,9 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
    requestAnimationFrame(()=>root.classList.add('on'));
    savedFov=camera.fov;
    if(!sign)sign=makeSign(scene);if(!bursts)bursts=makeBursts(scene);bursts.hide();sign.visible=true;
-   if(!B){B=createVehicle(scene);D=createVehicle(scene);R=createVehicle(scene);O=createVehicle(scene);W=createVehicle(scene);X=createVehicle(scene);[[B,0,0],[D,1,0],[R,2,0],[O,3,1],[W,4,1],[X,5,1]].forEach(([c,sl,tm])=>{c.__slot=sl;c.__team=tm})}
-   B.apply(getProfile());O.apply({name:'Rival',body:'octane',color:'#ff8b32'});D.apply({name:'Aliado',body:'dominus',color:'#1b2a33'});W.apply({name:'Rival',body:'fennec',color:'#d9531e'});R.apply({name:'Aliado',body:'octane',color:'#1d6fd8'});X.apply({name:'Rival',body:'dominus',color:'#ff8b32'});
-   vehicle=B;orange=O;ALL().forEach(c=>c.setVisible(false,false));hideCar.clear();bigFlame.clear();goalAt=0;for(const k in TRK)TRK[k].last=-1;
+   if(!B){B=createVehicle(scene);R=createVehicle(scene);O=createVehicle(scene);W=createVehicle(scene);[[B,0,0],[R,1,0],[O,2,1],[W,3,1]].forEach(([c,sl,tm])=>{c.__slot=sl;c.__team=tm})}
+   B.apply(getProfile());R.apply({name:'Aliado',body:'octane',color:'#1d6fd8'});O.apply({name:'Rival',body:'octane',color:'#ff8b32'});W.apply({name:'Rival',body:'octane',color:'#ff8b32'});
+   vehicle=B;orange=O;ALL().forEach(c=>c.setVisible(false,false));bigFlame.clear();goalAt=0;if(TRK)TRK.G.last=-1;
    ready=root.querySelector('.ready');goalword=root.querySelector('.goalword');idx=-1;shotT=0;endT=0;waiting=false;held=0;prevDown={};pressedPointer=false;downKeys.clear();black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');ready.classList.remove('on');goalword.classList.remove('on');frameCars.length=0;
    ball.visible=true;ball.position.set(0,.9125,0);ballShadow.visible=true;ballShadow.position.set(0,.015,0);ballShadow.material.opacity=.22;
    const keyHandler=e=>{if(!active||hold)return;if(e.target?.closest?.('form,input,textarea'))return;if(e.code==='Enter'&&!e.repeat){e.preventDefault();e.stopImmediatePropagation();onSkip();return}downKeys.add(e.code);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault()};
