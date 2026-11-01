@@ -235,7 +235,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  const TOTAL_REL=()=>S.reduce((a,b)=>a+b.dur,0);
  let B=null,R=null,O=null,W=null,ready=null,goalword=null,TRK=null;
  const ALL=()=>[B,R,O,W].filter(Boolean);
- const TRACK_URL=new URL('./intro-track.json?v=rl-20261101',import.meta.url);
+ const TRACK_URL=new URL('./intro-track.json?v=rl-20261102',import.meta.url);
  let st=0,idx=0,shotT=0,waiting=false,held=0,prevDown={},endPhase=0,endT=0;
  const downKeys=new Set();
  const isDown=(a)=>{for(const c of downKeys)if(matches(a,c))return true;return false};
@@ -275,7 +275,8 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  // ───────── fin guion ─────────
  async function start(){
   if(active)return;
-  if(!TRK)TRK=await fetch(TRACK_URL).then(r=>{if(!r.ok)throw Error('No se pudo cargar la cinemática');return r.json()});
+  if(!TRK)TRK=await fetch(TRACK_URL,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('No se pudo cargar la cinemática');return r.json()});
+  if(!TRK||!TRK.G||!TRK.G.frames)throw Error('La cinemática está desactualizada: recarga con Ctrl+F5');
   return new Promise(done=>{
    if(active)return done();
    resolve=done;active=true;t=0;sounds.clear();fired.clear();lastCount=0;root.hidden=false;flash.style.opacity=0;fade.style.opacity=1;fade.style.transition='none';count.classList.remove('pop');

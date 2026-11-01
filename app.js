@@ -16,7 +16,7 @@ import {scoreboardHTML} from './scoreboard.js?v=inventory-20261028';
 import {PostMatch} from './post-match.js?v=inventory-20261028';
 import {GameAudio} from './game-audio.js?v=inventory-20261028';
 import {FlipResetIndicator} from './flip-reset-visual.js?v=inventory-20261028';
-import {createIntro} from './intro.js?v=rl-20261101';import {logoSVG,logoFavicon} from './logo.js?v=rl-20261031';
+import {createIntro} from './intro.js?v=rl-20261102';import {logoSVG,logoFavicon} from './logo.js?v=rl-20261031';
 import {createBoostPads} from './boost-pads.js?v=rl-20261031';import {createPlaySession} from './play-session.js?v=inventory-20261028';import {NetClient,serverURL} from './net-client.js?v=inventory-20261028';import {constrainArenaCamera} from './arena-shape.js?v=inventory-20261028';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCamera,stadium,rig}){
