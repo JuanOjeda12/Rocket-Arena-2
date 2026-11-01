@@ -54,3 +54,5 @@ body[data-screen=podium] #front{background:radial-gradient(ellipse at 50% 45%,tr
 .home-logo{position:absolute;top:6%;left:5.5%;width:min(430px,70vw);filter:drop-shadow(0 8px 28px #0008)}
 .home-logo svg{display:block;width:100%;height:auto}
 @media(max-width:800px){.home-logo{top:4%;width:min(300px,78vw)}}
+
+.modal-shade{position:fixed;z-index:90}

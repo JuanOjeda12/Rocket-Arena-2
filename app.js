@@ -16,7 +16,7 @@ import {scoreboardHTML} from './scoreboard.js?v=inventory-20261028';
 import {PostMatch} from './post-match.js?v=inventory-20261028';
 import {GameAudio} from './game-audio.js?v=inventory-20261028';
 import {FlipResetIndicator} from './flip-reset-visual.js?v=inventory-20261028';
-import {createIntro} from './intro.js?v=rl-20261031';import {Tutorial} from './tutorial.js?v=rl-20261031';import {logoSVG,logoFavicon} from './logo.js?v=rl-20261031';
+import {createIntro} from './intro.js?v=rl-20261031';import {logoSVG,logoFavicon} from './logo.js?v=rl-20261031';
 import {createBoostPads} from './boost-pads.js?v=rl-20261031';import {createPlaySession} from './play-session.js?v=inventory-20261028';import {NetClient,serverURL} from './net-client.js?v=inventory-20261028';import {constrainArenaCamera} from './arena-shape.js?v=inventory-20261028';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCamera,stadium,rig}){
@@ -26,9 +26,21 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
  let saved={};try{saved=JSON.parse(localStorage.getItem('rocket-garage')||'{}')}catch{}
  let profile=cleanProfile(saved),screen='home',screenBack='home',running=false,keys={},ballCam=false,simulation=null,simulationReady=null,loading=false;
  let source='offline',network=null,networkOwner=false,slot=0,room=null,netA=null,netB=null,netAt=0,lastInput=0,transport='lan',serverBase=location.origin,serverInfo=null,selectedRoom=null,admissions=[];
- let hub=null,offlineOptions=null,tabHeld=false,scoreAt=0,tutorialRun=false,intro=null,tutorial=null;
+ let hub=null,offlineOptions=null,tabHeld=false,scoreAt=0,tutorialRun=false,intro=null,tutorial=null,holdSim=false,skipAsk=false,skipAll=false;
  const cookieDone=()=>/(?:^|; )rocket_tutorial=1/.test(document.cookie);
  const setCookie=()=>{try{document.cookie='rocket_tutorial=1; max-age=31536000; path=/; SameSite=Lax'}catch{}};
+
+ function setHold(v){holdSim=v;if(intro)intro.hold=v;if(tutorial)tutorial.hold=v}
+ // Enter durante la introducción/tutorial: pide iniciar sesión; solo se salta con una cuenta que YA completó el tutorial.
+ function doSkip(){markTutorial();skipAll=true;if(intro.active)intro.skip();if(tutorial?.active){tutorial.stop();skipAll=false;leaveRoom()}}
+ function requestSkip(){
+  if(skipAsk)return;
+  if(hub.account.user){if(hub.progress?.tutorial===true)doSkip();else toast('Tu cuenta aún no ha completado el tutorial.');return}
+  skipAsk=true;setHold(true);
+  const obs=new MutationObserver(()=>{if(hub.modal.hidden){skipAsk=false;setHold(false);obs.disconnect()}});obs.observe(hub.modal,{attributes:true,attributeFilter:['hidden']});
+  hub.openAuth(()=>{skipAsk=false;obs.disconnect();setHold(false);if(hub.account.user&&hub.progress?.tutorial===true)doSkip();else toast(hub.account.user?'Esa cuenta aún no ha completado el tutorial: vuelves al tutorial.':'Para saltarlo necesitas una cuenta que ya haya hecho el tutorial. Vuelves al tutorial.')});
+  hub.mode='login';hub.renderAuth();
+ }
  function tutorialDone(){const acc=hub.progress?.tutorial===true,ck=cookieDone();if(acc&&!ck)setCookie();if(ck&&!acc&&hub.account.user){hub.progress.tutorial=true;hub.account.persist()}return acc||ck}
  function markTutorial(){setCookie();if(hub.progress&&!hub.progress.tutorial){hub.progress.tutorial=true;hub.account.persist()}}
  async function startTutorial(){
@@ -39,10 +51,10 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
    const states=v.pads.map(p=>({...p,active:false}));intro.bindPads(pads,states);
    preview.setVisible(false);front.hidden=true;screen='intro';
    await intro.start();
+   if(skipAll){skipAll=false;front.hidden=false;loading=false;show('home');preview.apply(profile);return}
   }catch(e){console.error(e)}
-  front.hidden=false;loading=false;tutorialRun=true;await offline({blue:1,orange:0,training:true,tutorial:true});
-  if(screen==='game'||running){tutorial.start(skipped=>{markTutorial();tutorialRun=false;setTimeout(()=>{if(tutorial.done&&offlineOptions?.tutorial&&screen==='game')leaveRoom()},9500)})}else tutorialRun=false;
- }
+  front.hidden=false;loading=false;if(skipAll)skipAll=false;else markTutorial();show('home');preview.apply(profile);
+}
  const flipIndicator=new FlipResetIndicator(scene);const post=new PostMatch(),audio=new GameAudio(),podium=new T.Group();scene.add(podium);podium.visible=false;const podiumPoses=new Map();for(let i=0;i<5;i++){const shadow=new T.Mesh(new T.PlaneGeometry(1.7,2.1),new T.MeshBasicMaterial({map:softGlow(),color:0x000000,transparent:true,opacity:.3,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.002;podium.add(shadow)}
  addEventListener('pointerdown',()=>audio.unlock(),{passive:true});addEventListener('keydown',()=>audio.unlock());
  addEventListener('mousedown',e=>{if(screen==='podium'&&!e.target.closest('button,input,select,a')){e.preventDefault();keys['Mouse'+e.button]=true}});
@@ -176,9 +188,10 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
  addEventListener('keydown',e=>{
   if(e.code==='Tab'&&running){e.preventDefault();tabHeld=true;scoreAt=0;return}
   if(!running&&screen==='podium'){if(controls.used(e.code)){e.preventDefault();keys[e.code]=true}return}
+  if(e.code==='Enter'&&tutorial?.active&&!tutorial.done&&!e.repeat&&!e.target?.closest?.('form,input,textarea')){e.preventDefault();requestSkip();return}
   if(!running){if(e.code==='Escape'&&['garage','play','casual','competitive','private','local-private','settings','profile','inventory','missions','rocketpass'].includes(screen))show(screen==='casual'||screen==='competitive'?'play':'home');return}
   if(controls.used(e.code)||e.code==='Escape')e.preventDefault();
-  if(!keys[e.code]){if(e.code==='KeyT'&&tutorial?.active&&!tutorial.done)tutorial.skip();if(e.code==='Escape')session.pause('escape');if(controls.matches('camera',e.code))ballCam=!ballCam;if(controls.matches('skip',e.code))source==='network'?network?.send('skip'):simulation?.skip();if(controls.matches('reset',e.code)){if(source==='offline'&&offlineOptions?.difficulty!=='competitive')simulation?.resetRound();else if(source==='network'&&networkOwner)network?.send('reset')}}keys[e.code]=true;
+  if(!keys[e.code]){if(e.code==='Escape')session.pause('escape');if(controls.matches('camera',e.code))ballCam=!ballCam;if(controls.matches('skip',e.code))source==='network'?network?.send('skip'):simulation?.skip();if(controls.matches('reset',e.code)){if(source==='offline'&&offlineOptions?.difficulty!=='competitive')simulation?.resetRound();else if(source==='network'&&networkOwner)network?.send('reset')}}keys[e.code]=true;
  });addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab'){tabHeld=false;$('match-scoreboard').hidden=true}});canvas.addEventListener('contextmenu',e=>e.preventDefault());canvas.addEventListener('mousedown',e=>{if(running||screen==='podium'&&e.target===canvas){e.preventDefault();keys['Mouse'+e.button]=true}});addEventListener('mouseup',e=>keys['Mouse'+e.button]=false);
  function paint(a,b,t){
   effects.sync(b.events,slot,event=>{const epic=event.type==='epic-save';$('save-title').textContent=epic?'¡SALVADA ÉPICA!':'¡SALVADA!';$('save-award').dataset.epic=String(epic);$('save-award').style.animation='none';void $('save-award').offsetWidth;$('save-award').style.animation='';awardUntil=elapsed+2.8},b.cars);
@@ -248,7 +261,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   $('hud').hidden=!inMatch;
   $('save-award').hidden=!inMatch||elapsed>awardUntil||awardUntil===0;
   effects.update(inMatch&&source==='offline'&&!running&&screen!=='results'?0:dt,inMatch||['inventory','drop'].includes(screen));
-  if(source==='offline'&&simulation&&(running||screen==='podium'||screen==='results')){let ctl=readInput();const tut=tutorial?.active&&running&&!tutorial.done;if(tut&&stateB){const me=stateB.cars.find(c=>c.slot===slot);if(me&&stateB.phase==='live')ctl=tutorial.control(ctl,me,stateB,dt)}acc+=dt*(tut?tutorial.timeScale:1);while(acc>=1/120){simulation.tick(1/120,{[slot]:ctl});acc-=1/120}const next=simulation.view();stateA=stateB?.phase===next.phase?stateB:next;stateB=next}
+  if(source==='offline'&&simulation&&(running||screen==='podium'||screen==='results')){let ctl=readInput();const tut=tutorial?.active&&running&&!tutorial.done;if(tut&&stateB){const me=stateB.cars.find(c=>c.slot===slot);if(me&&stateB.phase==='live')ctl=tutorial.control(ctl,me,stateB,dt)}acc+=dt*(holdSim?0:tut?tutorial.timeScale:1);while(acc>=1/120){simulation.tick(1/120,{[slot]:ctl});acc-=1/120}const next=simulation.view();stateA=stateB?.phase===next.phase?stateB:next;stateB=next}
   if(source==='network'&&netB){stateA=netA||netB;stateB=netB;if((running||screen==='podium')&&now-lastInput>1000/30){network.send('input',{controls:readInput()});lastInput=now}}
   if(source==='network'&&['podium','results'].includes(screen)&&stateB?.phase!=='finished'){lastPhase='';session.start()}
   if(inMatch&&stateB){post.observe(stateB,running||source==='network'?dt:0);if(screen!=='results'&&screen!=='podium')paint(stateA||stateB,stateB,source==='network'?Math.min(1,(now-netAt)/(1000/30)):1);if(stateB.phase==='finished'&&lastPhase!=='finished'){hub.finish(stateB,slot);post.finish(stateB,slot);screen='podium';paintPost.clip=null;paintPost.podiumReady=false;podiumPoses.clear();session.pause('finished');renderFront()}lastPhase=stateB.phase}
@@ -266,7 +279,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   if(now-statsAt>1000){statsAt=now;canvas.dataset.renderStats=JSON.stringify({fps:Math.round(1000/renderBudget.average),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio:Number(renderBudget.ratio.toFixed(2)),crowd:stadium.crowdCount,crowdTriangles:stadium.crowdTriangles})}
  }
 try{let l=document.querySelector('link[rel~=icon]');if(!l){l=document.createElement('link');l.rel='icon';document.head.append(l)}l.href=logoFavicon()}catch{}
- intro=createIntro({scene,camera,renderer,stadium,vfx,createVehicle,audio,ball,ballShadow,getProfile:()=>profile,rig});tutorial=new Tutorial(controls);
+ intro=createIntro({scene,camera,renderer,stadium,vfx,createVehicle,audio,ball,ballShadow,getProfile:()=>profile,rig,onSkip:requestSkip,matches:(act,code)=>controls.matches(act,code),keyLabel:act=>controls.label(act)});
  show('home');simulationReady=Simulation.create({training:true,blue:1,orange:0}).then(s=>{simulation=s;return s}).catch(e=>{toast('No se pudo preparar la física. Recarga la página.');throw e});
  requestAnimationFrame(frame);addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
  window.arenaApp={get state(){return{screen,source,profile,slot,room,phase:stateB?.phase,cars:stateB?.cars?.length,score:stateB?.score}},get ready(){return!!simulation}};
