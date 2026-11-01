@@ -4,11 +4,12 @@ export const PLAYLISTS=['1v1','2v2','3v3'];
 export const RANKS=['Bronce','Plata','Oro','Platino','Diamante','Campeón','Gran Campeón','Leyenda Supersónica'];
 export const RANK_COLORS=['#c79568','#b9c9d7','#f4ca62','#75dde1','#559dff','#bc91ff','#ff777f','#f6e9ff'];
 const integer=(n,fallback=0)=>Number.isFinite(Number(n))?Math.max(0,Math.floor(Number(n))):fallback;
-export function emptyProgress(){return{version:1,xp:0,ranked:Object.fromEntries(PLAYLISTS.map(p=>[p,{mmr:400,played:0,wins:0,step:20}])),totals:{matches:0,wins:0,goals:0,assists:0,saves:0,shots:0},recent:[],pending:null}}
+export function emptyProgress(){return{version:1,xp:0,ranked:Object.fromEntries(PLAYLISTS.map(p=>[p,{mmr:400,played:0,wins:0,step:20}])),totals:{matches:0,wins:0,goals:0,assists:0,saves:0,shots:0},recent:[],pending:null,tutorial:false}}
 export function cleanProgress(value={}){
  const p=emptyProgress();p.xp=integer(value.xp);
  for(const key of Object.keys(p.totals))p.totals[key]=integer(value.totals?.[key]);
  for(const list of PLAYLISTS){const r=value.ranked?.[list]||{};p.ranked[list]={mmr:clamp(integer(r.mmr,400),0,2400),played:integer(r.played),wins:integer(r.wins),step:clamp(integer(r.step,Math.floor(integer(r.mmr,400)/20)),0,84)}}
+ p.tutorial=value.tutorial===true;
  p.recent=Array.isArray(value.recent)?value.recent.filter(id=>typeof id==='string').slice(-100):[];
  if(value.pending&&typeof value.pending.id==='string'&&['casual','competitive'].includes(value.pending.mode)&&PLAYLISTS.includes(value.pending.playlist))p.pending={...value.pending};
  return p;

@@ -7,8 +7,6 @@ export function createCrowd(scene,people){
  colors.forEach((color,i)=>{
   const x=i*64;ctx.save();ctx.translate(x,0);const g=ctx.createRadialGradient(24,38,5,32,58,44);g.addColorStop(0,'#ffffff');g.addColorStop(.24,color);g.addColorStop(1,'#324358');
   ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(32,10);ctx.bezierCurveTo(15,10,7,57,8,79);ctx.bezierCurveTo(8,105,56,105,56,79);ctx.bezierCurveTo(57,57,49,10,32,10);ctx.fill();
-  for(const ex of [24,40]){ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(ex,49,5,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#15283d';ctx.beginPath();ctx.ellipse(ex,51,2.4,4,0,0,Math.PI*2);ctx.fill()}
-  ctx.strokeStyle='#31445a';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(32,64,5,0,Math.PI);ctx.stroke();ctx.restore();
  });
  const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=2;
  const geometry=new T.PlaneGeometry(.76,1.13),indices=new Float32Array(people.length);

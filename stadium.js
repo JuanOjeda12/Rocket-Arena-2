@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
 import {arenaPerimeter} from './arena-shape.js?v=inventory-20261028';
 import {stadiumTime} from './stadium-time.js?v=inventory-20261028';
-import {createCrowd} from './crowd.js?v=rl-20261031';
+import {createCrowd} from './crowd.js?v=rl-20261031c';
 import {softGlow} from './boost-visual.js?v=rl-20261031';
 import {createAirTraffic} from './air-traffic.js?v=rl-20261031';
 
@@ -58,8 +58,26 @@ export function createStadium(scene,{sun,hemisphere,renderer}){
  // Floodlight gantries and the city beyond the open roof.
  const detail=new Batch(),emitters=new Batch();
  for(const x of [-46,46])for(const z of [-39,0,39]){
-  detail.box(.5,30,.5,x,15,z,0x526275);detail.box(6,2.4,.6,x,30,z,0x14243a);
-  for(let u=0;u<8;u++)for(let v=0;v<3;v++)emitters.box(.48,.42,.08,x-2.5+u*.7,29.3+v*.65,z+(x>0?-.35:.35),0xe2f3ff);
+  detail.box(.5,30,.5,x,15,z,0x526275);detail.box(.9,.9,.9,x,.45,z,0x3a4856);
+ }
+ // Paneles de luz: cada torre apunta hacia el centro del campo (antes miraban a lo largo de la banda).
+ const power={flood:1,neon:1,city:1,towers:[1,1,1,1,1,1]},floodlights=[];
+ {
+  const led=document.createElement('canvas');led.width=256;led.height=96;const lc=led.getContext('2d');lc.fillStyle='#10161f';lc.fillRect(0,0,256,96);
+  for(let u=0;u<8;u++)for(let v=0;v<3;v++){const g=lc.createRadialGradient(16+u*32,16+v*32,1,16+u*32,16+v*32,15);g.addColorStop(0,'#ffffff');g.addColorStop(.55,'#e7f4ff');g.addColorStop(1,'#5d7690');lc.fillStyle=g;lc.beginPath();lc.arc(16+u*32,16+v*32,13,0,Math.PI*2);lc.fill()}
+  const ledMap=new T.CanvasTexture(led);ledMap.colorSpace=T.SRGBColorSpace;
+  const fade=document.createElement('canvas');fade.width=2;fade.height=64;const fc=fade.getContext('2d'),fg=fc.createLinearGradient(0,0,0,64);fg.addColorStop(0,'#000');fg.addColorStop(.12,'#fff');fg.addColorStop(1,'#000');fc.fillStyle=fg;fc.fillRect(0,0,2,64);
+  const fadeMap=new T.CanvasTexture(fade);
+  let index=0;
+  for(const x of [-46,46])for(const z of [-39,0,39]){
+   const group=new T.Group();group.position.set(x,30,z);const target=new T.Vector3(x>0?-6:6,0,z*.28);group.lookAt(target);scene.add(group);
+   const frame=new T.Mesh(new T.BoxGeometry(6,2.4,.6),new T.MeshStandardMaterial({color:0x14243a,roughness:.6,metalness:.5}));group.add(frame);
+   const ledMaterial=new T.MeshBasicMaterial({map:ledMap,toneMapped:false}),panel=new T.Mesh(new T.PlaneGeometry(5.7,2.1),ledMaterial);panel.position.z=.32;group.add(panel);
+   const glow=new T.Sprite(new T.SpriteMaterial({map:softGlow(),color:0xdff1ff,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false}));glow.scale.set(17,11,1);glow.position.z=1.2;group.add(glow);
+   const length=group.position.distanceTo(target),cone=new T.CylinderGeometry(9,2.2,length,28,1,true);cone.translate(0,length/2,0);cone.rotateX(Math.PI/2);
+   const beamMaterial=new T.MeshBasicMaterial({color:0xcfe8ff,transparent:true,opacity:0,alphaMap:fadeMap,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,toneMapped:false}),beam=new T.Mesh(cone,beamMaterial);beam.position.z=.4;group.add(beam);
+   floodlights.push({index:index++,ledMaterial,glow,beamMaterial});
+  }
  }
  // Ground, stadium foundation and landscaped approach roads share the static batches.
  detail.box(500,.5,500,0,-.6,0,0x596b58);
@@ -128,10 +146,19 @@ export function createStadium(scene,{sun,hemisphere,renderer}){
   spectators.update(time,state.night);uniforms.top.value.copy(mix(a.top,b.top,t));uniforms.horizon.value.copy(mix(a.horizon,b.horizon,t));uniforms.sunColor.value.copy(mix(a.sun,b.sun,t));uniforms.night.value=state.night;uniforms.time.value=time;
   const height=state.elapsed<=180?T.MathUtils.lerp(.85,.1,t):T.MathUtils.lerp(.1,-.35,t);sun.position.set(-35,height*80,25);uniforms.sunDirection.value.copy(sun.position).normalize();sun.intensity=T.MathUtils.lerp(a.power,b.power,t);sun.color.copy(mix(a.sun,b.sun,t));hemisphere.color.copy(mix(a.horizon,b.horizon,t));hemisphere.groundColor.copy(mix(a.ground,b.ground,t));hemisphere.intensity=T.MathUtils.lerp(a.hemi,b.hemi,t);
   scene.fog.color.copy(mix(a.horizon,b.horizon,t));scene.fog.near=115;scene.fog.far=260;scene.environmentIntensity=T.MathUtils.lerp(.6,.3,state.elapsed/300);renderer.toneMappingExposure=1.05;
-  haloMaterial.opacity=.12+.3*state.night;stadiumLights.forEach(light=>light.intensity=45+state.night*1350);windows.material.opacity=.3+.7*Math.max(state.night,state.elapsed/600);document.body.dataset.timeOfDay=state.label;
+  neonMat.color.setScalar(power.neon);haloMaterial.opacity=(.12+.3*state.night)*power.neon;stadiumLights.forEach(light=>light.intensity=(45+state.night*1350)*power.flood);windows.material.opacity=(.3+.7*Math.max(state.night,state.elapsed/600))*power.city;document.body.dataset.timeOfDay=state.label;
+  for(const f of floodlights){const level=power.flood*power.towers[f.index]*(.3+.7*state.night);f.ledMaterial.color.setScalar(.12+.88*level);f.glow.material.opacity=.85*level*level;f.beamMaterial.opacity=.032*level*level*state.night+.005*level}
   return state;
  }
- update();return{update,crowdCount:crowd.length,crowdTriangles:spectators.triangles};
+ update();// Oculta los espectadores 2D de unas zonas (círculos en el plano XZ) mientras actúan los fans 3D de la introducción.
+ let original=null;
+ function maskCrowd(zones){
+  const mesh=spectators.mesh;if(!original)original=mesh.instanceMatrix.array.slice();
+  const a=mesh.instanceMatrix.array;a.set(original);
+  if(zones?.length)crowd.forEach((p,i)=>{if(zones.some(z=>Math.hypot(p.x-z.x,p.z-z.z)<z.r))for(let k=0;k<12;k++)a[i*16+k]=0});
+  mesh.instanceMatrix.needsUpdate=true;
+ }
+ return{update,crowdCount:crowd.length,crowdTriangles:spectators.triangles,power,maskCrowd};
 }
 
 

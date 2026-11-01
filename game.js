@@ -4,10 +4,10 @@ import {addRoundedArena} from './arena-view.js?v=inventory-20261028';
 import {turfMaterials} from './surface-materials.js?v=inventory-20261028';
 import {createBallVisual} from './ball-view.js?v=inventory-20261028';
 import {RoomEnvironment} from './vendor/RoomEnvironment.js';
-import {startApp} from './app.js?v=rl-20261031';
+import {startApp} from './app.js?v=rl-20261031b';
 import {ARENA} from './arena-shape.js?v=inventory-20261028';
-import {createStadium} from './stadium.js?v=rl-20261031';
-import {createArenaDecor} from './arena-decor.js?v=rl-20261031';
+import {createStadium} from './stadium.js?v=rl-20261031c';
+import {createArenaDecor} from './arena-decor.js?v=rl-20261031b';
 const $=id=>document.getElementById(id), canvas=$('game');
 const renderer=new T.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
 const scene=new T.Scene();scene.background=new T.Color('#102638');scene.fog=new T.Fog('#102638',80,225);
@@ -30,7 +30,7 @@ addRoundedArena(scene);
 line([[-W,.04,0],[W,.04,0]]);for(const radius of [9.15,.5]){const pts=[];for(let i=0;i<=96;i++)pts.push([Math.sin(i/96*Math.PI*2)*radius,.05,Math.cos(i/96*Math.PI*2)*radius]);line(pts)}
 const baseStadium=createStadium(scene,{sun,hemisphere,renderer}),decor=createArenaDecor(scene);
 // La decoración (pintura del campo, luces de pared, porterías) sigue la hora del día del estadio.
-const stadium={...baseStadium,update:(...args)=>{const state=baseStadium.update(...args);decor.update(args[3],state);return state}};
+const stadium={...baseStadium,decorPower:decor.power,update:(...args)=>{const state=baseStadium.update(...args);decor.update(args[3],state);return state}};
 const ball=createBallVisual();scene.add(ball);
 const ballShadow=new T.Mesh(new T.CircleGeometry(1.1,32),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.2,depthWrite:false}));ballShadow.rotation.x=-Math.PI/2;scene.add(ballShadow);
-startApp({scene,camera,renderer,canvas,ball,ballShadow,followCamera,stadium});
+startApp({scene,camera,renderer,canvas,ball,ballShadow,followCamera,stadium,rig:{hemisphere,sun}});

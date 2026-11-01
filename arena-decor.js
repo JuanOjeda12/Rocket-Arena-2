@@ -70,15 +70,15 @@ function wallLights(scene){
   dist+=len;
  }
  const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(pos,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.setAttribute('color',new T.Float32BufferAttribute(col,3));geometry.setIndex(idx);
- const uniforms={time:{value:0},night:{value:0}};
+ const uniforms={time:{value:0},night:{value:0},reveal:{value:1},total:{value:dist}};
  const material=new T.ShaderMaterial({uniforms,transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending,
   vertexShader:`attribute vec3 color;varying vec2 vUv;varying vec3 vColor;void main(){vUv=uv;vColor=color;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-  fragmentShader:`varying vec2 vUv;varying vec3 vColor;uniform float time,night;
-   void main(){float fall=pow(1.0-vUv.y,2.4);float flow=.55+.45*sin(vUv.x*.42-time*1.1);float panel=abs(fract(vUv.x/3.2)*2.0-1.0);float seam=smoothstep(.93,1.0,panel);
+  fragmentShader:`varying vec2 vUv;varying vec3 vColor;uniform float time,night,reveal,total;
+   void main(){float front=reveal*(total+14.0);float lit=1.0-smoothstep(front-14.0,front,vUv.x);float fall=pow(1.0-vUv.y,2.4);float flow=.55+.45*sin(vUv.x*.42-time*1.1);float panel=abs(fract(vUv.x/3.2)*2.0-1.0);float seam=smoothstep(.93,1.0,panel);
     float rows=smoothstep(.9,1.0,abs(fract(vUv.y*3.0)*2.0-1.0))*.5;
-    float a=fall*(.2+.2*flow+seam*.5+rows*.25)*(.7+.9*night);gl_FragColor=vec4(vColor*1.25,a);}`});
+    float a=fall*(.2+.2*flow+seam*.5+rows*.25)*(.7+.9*night)*lit;gl_FragColor=vec4(vColor*1.25,a);}`});
  const mesh=new T.Mesh(geometry,material);mesh.renderOrder=4;scene.add(mesh);
- return{update(time,night){uniforms.time.value=time;uniforms.night.value=night}};
+ return{update(time,night,reveal=1){uniforms.time.value=time;uniforms.night.value=night;uniforms.reveal.value=reveal}};
 }
 
 // ---------- Porterías: red, brillo interior y cartel ----------
@@ -98,8 +98,8 @@ function goals(scene){
   plane(G*2,depth,0,GH-.03,s*mid,0,Math.PI/2,.5);
   // Resplandor interior: pared del fondo y suelo de la portería.
   const glowMat=()=>new T.MeshBasicMaterial({map:softGlow(),color:hex,transparent:true,opacity:.6,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false,side:T.DoubleSide});
-  const back=new T.Mesh(new T.PlaneGeometry(G*2.1,GH*1.6),glowMat());back.position.set(0,GH*.42,s*(B-.06));back.renderOrder=4;scene.add(back);
-  const floor=new T.Mesh(new T.PlaneGeometry(G*2,depth),glowMat());floor.rotation.x=-Math.PI/2;floor.position.set(0,.035,s*mid);floor.material.opacity=.45;floor.renderOrder=4;scene.add(floor);
+  const back=new T.Mesh(new T.PlaneGeometry(G*2.1,GH*1.6),glowMat());back.position.set(0,GH*.42,s*(B-.06));back.renderOrder=4;back.userData.base=.6;scene.add(back);items.push(back);
+  const floor=new T.Mesh(new T.PlaneGeometry(G*2,depth),glowMat());floor.rotation.x=-Math.PI/2;floor.position.set(0,.035,s*mid);floor.material.opacity=.45;floor.renderOrder=4;floor.userData.base=.45;scene.add(floor);items.push(floor);
   // Halo a lo largo de los postes y el larguero.
   for(const px of [-G,G]){const halo=new T.Sprite(new T.SpriteMaterial({map:softGlow(),color:hex,transparent:true,opacity:.55,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false}));halo.scale.set(1.8,GH*1.5,1);halo.position.set(px,GH/2,s*L);scene.add(halo);items.push(halo)}
   const bar=new T.Sprite(new T.SpriteMaterial({map:softGlow(),color:hex,transparent:true,opacity:.5,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false}));bar.scale.set(G*2.6,1.7,1);bar.position.set(0,GH,s*L);scene.add(bar);items.push(bar);
@@ -108,9 +108,10 @@ function goals(scene){
 }
 
 export function createArenaDecor(scene){
- const paint=fieldPaint(scene),walls=wallLights(scene),halos=goals(scene);
- return{update(time=0,state={}){
-  const night=state.night??0;walls.update(time,night);paint.material.color.setScalar(.82+.18*night);
-  const pulse=.9+.1*Math.sin(time*2.2);for(const h of halos)h.material.opacity=(.4+.3*night)*pulse;
+ const paint=fieldPaint(scene),walls=wallLights(scene),halos=goals(scene),power={wall:1,paint:1,goal:1};
+ // `power` lo usa la introducción para ir encendiendo el estadio poco a poco (1 = todo encendido).
+ return{power,update(time=0,state={}){
+  const night=state.night??0;walls.update(time,night,power.wall);paint.material.color.setScalar((.82+.18*night)*power.paint);paint.visible=power.paint>.01;
+  const pulse=.9+.1*Math.sin(time*2.2);for(const h of halos)h.material.opacity=(h.userData.base!=null?h.userData.base:(.4+.3*night)*pulse)*power.goal;
  }};
 }
