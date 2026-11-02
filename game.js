@@ -4,7 +4,7 @@ import {addRoundedArena} from './arena-view.js?v=inventory-20261028';
 import {turfMaterials} from './surface-materials.js?v=inventory-20261028';
 import {createBallVisual} from './ball-view.js?v=inventory-20261028';
 import {RoomEnvironment} from './vendor/RoomEnvironment.js';
-import {startApp} from './app.js?v=rl-20261102';
+import {startApp} from './app.js?v=final1';
 import {ARENA} from './arena-shape.js?v=inventory-20261028';
 import {createStadium} from './stadium.js?v=rl-20261031c';
 import {createArenaDecor} from './arena-decor.js?v=rl-20261031b';

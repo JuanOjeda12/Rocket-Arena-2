@@ -1,0 +1,26 @@
+﻿SUBIR A GITHUB - introduccion nueva
+===================================
+Esta carpeta tiene SOLO lo nuevo y lo modificado. Sube TODO su contenido a la raiz de tu repositorio,
+respetando las carpetas (la carpeta audio/ incluida), y acepta reemplazar los archivos que ya existen.
+
+NUEVOS (6):
+  - camaras-tutorial.json
+  - demolition-fx.js
+  - intro-track.json
+  - tutorial-audio.js
+  - audio\INTRO TUTORIAL CUTSCENE _ ROCKET LEAGUE.mp4
+  - audio\LEEME.txt
+
+MODIFICADOS (6):
+  - app.css
+  - app.js
+  - game.js
+  - index.html
+  - intro.js
+  - vfx.js
+
+Notas
+- El MP4 de audio pesa 23,6 MB: la web de GitHub admite hasta 25 MB por archivo (por git, hasta 100 MB).
+- Los archivos tienen una version de cache nueva (?v=final1) para que GitHub Pages no mezcle archivos viejos y nuevos.
+  Despues de publicar, recarga con Ctrl+F5 la primera vez.
+- Esta carpeta REEMPLAZA a la antigua SUBIR-A-GITHUB (que ya no sirve).

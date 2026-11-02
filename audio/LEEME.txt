@@ -1,0 +1,2 @@
+Pon aquí los archivos de audio de la introducción (por ejemplo "INTRO TUTORIAL CUTSCENE _ ROCKET LEAGUE.mp4").
+El nombre debe ser EXACTAMENTE el que aparece en camaras-tutorial.json (campo "file"). Si el archivo no está, la introducción se ve y se juega igual pero sin ese audio.

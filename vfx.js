@@ -1,6 +1,7 @@
 import * as T from './vendor/three.module.js';
 import {softGlow} from './boost-visual.js?v=rl-20261031';
 import {PointPool,SparkLines,RingPool,Ribbon,SkidMarks,SpeedStreaks,rgb,rand} from './vfx-core.js?v=rl-20261031';
+import {DemolitionFX} from './demolition-fx.js?v=demo1';
 // Efectos de conducción al estilo Rocket League: turbo, derrape con marcas y humo, velocidad
 // supersónica (estelas, onda de choque, partículas pegadas al suelo), saltos, aterrizajes,
 // demoliciones, impactos en el balón y recogida de turbo. Todo se deriva del estado visible
@@ -120,7 +121,7 @@ class CarFx{
 
 export class VfxHub{
  constructor({scene,camera,renderer}){
-  Object.assign(this,{scene,camera,renderer});this.size=new T.Vector2();
+  Object.assign(this,{scene,camera,renderer});this.size=new T.Vector2();this.demoFx=new DemolitionFX(scene);   // explosión de demolición estilo Rocket League
   this.glow=new PointPool(scene,{max:3600,additive:true,soft:1.8});this.smoke=new PointPool(scene,{max:1500,additive:false,soft:1.15});
   this.sparks=new SparkLines(scene,{max:900});this.rings=new RingPool(scene,30);this.skid=new SkidMarks(scene);this.streaks=new SpeedStreaks(scene);
   this.cars=new Map();this.ballPrev=null;this.shake=0;this.dt=0;this.superLevel=0;this.local=null;
@@ -138,6 +139,7 @@ export class VfxHub{
   if(isLocal)this.shake=Math.min(.6,this.shake+.18);
  }
  explosion(x,y,z,team){
+  this.demoFx.burst(x,y,z,team);
   const c=team?ORANGE:BLUE;
   for(let i=0;i<70;i++){const a=Math.random()*6.28,b=(Math.random()-.3)*Math.PI*.9,s=rand(4,16);this.sparks.spawn(x,y,z,Math.cos(a)*Math.cos(b)*s,Math.sin(b)*s+3,Math.sin(a)*Math.cos(b)*s,rand(.4,.9),mix(c,WHITE,Math.random()*.6),9,.04,1)}
   for(let i=0;i<26;i++){const a=Math.random()*6.28,s=rand(1,5);this.smoke.spawn(x,y,z,Math.cos(a)*s,rand(.5,3),Math.sin(a)*s,rand(.8,1.4),.6,2.6,[.35,.33,.34],[.15,.15,.17],.55,0,1.6,-.3)}
@@ -172,7 +174,7 @@ export class VfxHub{
  // Intensidad 0..1 del coche local para HUD y cámara.
  get superSonic(){return this.local?this.local.fx.level:0}
  update(dt,{streaks=true}={}){
-  const cam=this.camera;this.renderer.getDrawingBufferSize(this.size);
+  const cam=this.camera;this.renderer.getDrawingBufferSize(this.size);this.demoFx.tick(dt);
   this.glow.update(dt,cam,this.size.y);this.smoke.update(dt,cam,this.size.y);this.sparks.update(dt);this.rings.update(dt);this.skid.update(dt);
   for(const fx of this.cars.values())fx.finish(dt,cam);
   const local=this.local;

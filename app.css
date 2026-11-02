@@ -56,3 +56,11 @@ body[data-screen=podium] #front{background:radial-gradient(ellipse at 50% 45%,tr
 @media(max-width:800px){.home-logo{top:4%;width:min(300px,78vw)}}
 
 .modal-shade{position:fixed;z-index:90}
+
+/* Pantalla de título y botón de Ajustes de la introducción */
+.intro-replay{position:fixed;right:5vw;bottom:127px;z-index:15;font-size:11px}
+#title-screen{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:radial-gradient(ellipse at 50% 42%,rgba(5,12,24,.12),rgba(2,6,14,.6) 78%),linear-gradient(180deg,rgba(0,0,0,.35),transparent 32%,rgba(0,0,0,.55));animation:tsIn .8s ease-out;transition:opacity .45s}
+#title-screen.out{opacity:0;pointer-events:none}
+#title-screen .ts-logo{width:min(54vw,740px)}#title-screen .ts-logo svg{display:block;width:100%;height:auto;filter:drop-shadow(0 0 28px rgba(40,140,255,.45))}
+#title-screen .ts-press{margin-top:6vh;font:600 clamp(12px,1.3vw,19px) Barlow,Arial,sans-serif;letter-spacing:.22em;color:#6fd7f2;text-shadow:0 0 10px #1a8fb0;animation:tsBlink 1.7s ease-in-out infinite}
+@keyframes tsBlink{0%,100%{opacity:.35}50%{opacity:1}}@keyframes tsIn{from{opacity:0}to{opacity:1}}
