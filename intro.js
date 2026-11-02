@@ -151,7 +151,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  }
  // Saque: los dos coches con turbo contra el balón y explosión.
  // Cuenta atrás 3-2-1 (16.9 / 17.9 / 18.9 s del vídeo); el 3 ya aparece sobre el último plano del coche naranja.
- let cdMute=false,lastWall=0,needAudio=false,wasHold=false;   // cdMute: si suena la pista de audio (trae su propia cuenta atrás) no se añade el pitido sintético
+ let cdMute=false,lastWall=0,wasHold=false,anyPress=false,arrived=false,holdDone=false,gate=0,lastRate=1,prepared=null;const HOLD=3.2;   // HOLD: la tarjeta «presiona cualquier botón» espera aquí hasta que el jugador pulse   // cdMute: si suena la pista de audio (trae su propia cuenta atrás) no se añade el pitido sintético
  function digit(){const n=t<16.9||t>=TIMELINE.kick?0:t<17.9?3:t<18.9?2:1;if(n&&n!==lastCount){lastCount=n;count.textContent=n;count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');cdMute||audio.tone(n===1?880:660,.35,.28,'sine')}}
  // Pantalla de título (2.4–4.4 s del vídeo): cámara baja ante la pared de marcador y el balón en primer plano.
  function titleShot(){const k=Math.min(1,Math.max(0,(t-2.0)/2.4));ball.visible=true;ballShadow.visible=true;ball.position.set(5.5,.9125,10);ballShadow.position.set(5.5,.015,10);ballShadow.material.opacity=.22;ALL().forEach(a=>a?.setVisible(false,false));camera.position.set(lerp(-5,-3,k),lerp(1.3,1.6,k),lerp(20,17,k));camera.up.set(0,1,0);camera.lookAt(1,lerp(7,6.5,k),-34);camera.fov=58}
@@ -398,13 +398,30 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   if(endT>4.8)finish();
  }
  // ───────── fin guion ─────────
- async function start(){
-  if(active)return;
+ // Carga todo lo pesado (cinemática, cámaras, audio decodificado, coches, sombras compiladas) ANTES de que empiece la intro.
+ async function prepare(){
   if(!TRK)TRK=await fetch(TRACK_URL,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('No se pudo cargar la cinemática');return r.json()});
   if(!TRK||!TRK.G||!TRK.G.frames||!TRK.G.marks)throw Error('La cinemática está desactualizada: recarga con Ctrl+F5');
   if(!CAM||LIVE){try{if(LIVE){const raw=localStorage.getItem('rocketArena.camEditor.live');CAM=raw?JSON.parse(raw):null;audLoaded=false}else{const r=await fetch(new URL('./camaras-tutorial.json?v=final1',import.meta.url),{cache:'no-cache'});if(r.ok)CAM=await r.json()}}catch{}}
   if(CAM&&CAM.audio&&!audLoaded){audLoaded=true;try{await TA.load(CAM,loadAudioBytes)}catch(e){console.warn(e)}}
   cdMute=!!(CAM&&CAM.cameraKeys&&TA.hasAudio);
+ }
+ function ensureObjects(){
+  if(!sign)sign=makeSign(scene);if(!bursts)bursts=makeBursts(scene);
+  if(!B){B=createVehicle(scene);R=createVehicle(scene);O=createVehicle(scene);W=createVehicle(scene);[[B,0,0],[R,1,0],[O,2,1],[W,3,1]].forEach(([c,sl,tm])=>{c.__slot=sl;c.__team=tm})}
+  B.apply(getProfile());R.apply({name:'Aliado',body:'octane',color:'#1d6fd8'});O.apply({name:'Rival',body:'octane',color:'#ff8b32'});W.apply({name:'Rival',body:'octane',color:'#ff8b32'});
+ }
+ function warm(){   // dibuja una vez todo lo que usará la intro para que los shaders y texturas ya estén en la GPU
+  const p=camera.position.clone(),q=camera.quaternion.clone(),f=camera.fov;
+  try{ensureObjects();ALL().forEach((c,i)=>{c.setVisible(true,false);c.root.position.set(-3+i*2,.17,0)});if(sign)sign.visible=true;camera.position.set(0,2.5,9);camera.lookAt(0,.5,0);camera.fov=50;camera.updateProjectionMatrix();renderer.compile(scene,camera);renderer.render(scene,camera)}
+  catch(e){console.warn('precarga',e)}
+  finally{ALL().forEach(c=>c?.setVisible(false,false));if(sign)sign.visible=false;bursts?.hide();camera.position.copy(p);camera.quaternion.copy(q);camera.fov=f;camera.updateProjectionMatrix()}
+ }
+ function preload(){return prepared??=prepare().then(()=>{if(!active)warm()}).catch(e=>{prepared=null;throw e})}
+ async function start(){
+  if(active)return;
+  await(LIVE?prepare():preload());await TA.prime();
+  if(active)return;
   buildShots();
   return new Promise(done=>{
    if(active)return done();
@@ -415,10 +432,10 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
    if(!B){B=createVehicle(scene);R=createVehicle(scene);O=createVehicle(scene);W=createVehicle(scene);[[B,0,0],[R,1,0],[O,2,1],[W,3,1]].forEach(([c,sl,tm])=>{c.__slot=sl;c.__team=tm})}
    B.apply(getProfile());R.apply({name:'Aliado',body:'octane',color:'#1d6fd8'});O.apply({name:'Rival',body:'octane',color:'#ff8b32'});W.apply({name:'Rival',body:'octane',color:'#ff8b32'});
    vehicle=B;orange=O;ALL().forEach(c=>c.setVisible(false,false));bigFlame.clear();if(TRK)TRK.G.last=-1;
-   ready=root.querySelector('.ready');goalword=root.querySelector('.goalword');idx=-1;shotT=0;endT=0;waiting=false;held=0;prevDown={};PT=-19.6;promptFor=null;preOK=false;rmp=-1;needAudio=true;lastWall=0;pressedPointer=false;downKeys.clear();black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');ready.classList.remove('on');goalword.classList.remove('on');frameCars.length=0;
+   ready=root.querySelector('.ready');goalword=root.querySelector('.goalword');idx=-1;shotT=0;endT=0;waiting=false;held=0;prevDown={};PT=-19.6;promptFor=null;preOK=false;rmp=-1;anyPress=false;arrived=false;holdDone=false;gate=0;lastRate=1;lastWall=0;pressedPointer=false;downKeys.clear();black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');ready.classList.remove('on');goalword.classList.remove('on');frameCars.length=0;
    ball.visible=true;ball.position.set(0,.9125,0);ballShadow.visible=true;ballShadow.position.set(0,.015,0);ballShadow.material.opacity=.22;
-   const keyHandler=e=>{if(!active||hold)return;if(e.target?.closest?.('form,input,textarea'))return;if(e.code==='Enter'&&!e.repeat){e.preventDefault();e.stopImmediatePropagation();onSkip();return}downKeys.add(e.code);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault()};
-   const upHandler=e=>downKeys.delete(e.code),mdown=e=>{downKeys.add('Mouse'+e.button)},mup=e=>downKeys.delete('Mouse'+e.button);
+   const keyHandler=e=>{if(!active||hold)return;if(e.target?.closest?.('form,input,textarea'))return;if(e.code==='Enter'&&!e.repeat){e.preventDefault();e.stopImmediatePropagation();onSkip();return}if(!e.repeat)anyPress=true;downKeys.add(e.code);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault()};
+   const upHandler=e=>downKeys.delete(e.code),mdown=e=>{anyPress=true;downKeys.add('Mouse'+e.button)},mup=e=>downKeys.delete('Mouse'+e.button);
    start.keyHandler=keyHandler;start.upHandler=upHandler;start.ptr=mdown;start.mup=mup;addEventListener('keydown',keyHandler,true);addEventListener('keyup',upHandler,true);addEventListener('mousedown',mdown,true);addEventListener('mouseup',mup,true);
    root.style.pointerEvents='none';
   });
@@ -436,8 +453,18 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   const wall=performance.now();let dt=lastWall?Math.min(.5,(wall-lastWall)/1000):Math.min(dt0,.05);lastWall=wall;
   if(!active)return;
   if(hold){if(!wasHold){wasHold=true;TA.stop()}return}   // pausa (p. ej. ventana de inicio de sesión): el audio también se detiene
-  if(wasHold){wasHold=false;if(TA.hasAudio&&!waiting)TA.start(PT,.3)}
-  if(needAudio){needAudio=false;dt=Math.min(dt,.05);if(TA.hasAudio)TA.start(PT,.3)}   // el audio arranca con el primer fotograma ya dibujado, no antes
+  if(wasHold){wasHold=false;if(TA.hasAudio&&!waiting&&holdDone)gate=TA.start(PT,.3)}
+  if(gate){if(TA.clock()<gate)dt=0;else gate=0}   // la imagen espera el instante exacto en que empieza a sonar el audio
+  // La tarjeta «PRESIONA CUALQUIER BOTÓN» no avanza sola: se queda quieta hasta que el jugador pulse (teclado, ratón o mando)
+  if(!holdDone&&LIVE){holdDone=true;if(TA.hasAudio)gate=TA.start(PT,0)}
+  if(!holdDone&&t+dt>=HOLD){
+   if(!arrived){arrived=true;anyPress=false}
+   if(!anyPress)try{for(const g of navigator.getGamepads?.()||[])if(g&&g.buttons.some(b=>b.pressed))anyPress=true}catch{}
+   if(!anyPress){t=HOLD;dt=0}
+   else{holdDone=true;t=HOLD;dt=0;PT=HOLD-TIMELINE.kick;if(TA.hasAudio)gate=TA.start(PT,0)}   // el audio arranca justo ahora, desde donde toca
+  }
+  // mientras todo va a velocidad normal, la imagen se mantiene pegada al reloj del audio (corrige cualquier tirón)
+  if(holdDone&&!gate&&lastRate===1&&!waiting&&rmp<0){const p=TA.pos();if(p!=null&&Math.abs(p-PT)<.5)dt*=1+Math.max(-.15,Math.min(.15,(p-PT)*.6))}
   t+=dt;const T0=TIMELINE;
   lights();night();if(t<T0.kick)PT=t-T0.kick;
   stage();frameCars.length=0;
@@ -455,5 +482,5 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   vfx.begin(dt);for(const f of frameCars)vfx.car(f.state,f.a.root,{localSlot:0,boostRGB:f.a.boostRGB});vfx.update(dt,{streaks:frameCars.some(f=>f.a===B)});
   bursts?.update(dt);
  }
- return{get debug(){return{idx,waiting,id:S[idx]?.id,shotT,endT}},get active(){return active},set hold(v){hold=v},start,update,skip:finish,bindPads(p,states){pads=p;padStates=states},seek(time,step=1/30){if(!active)return;const n=Math.max(0,Math.round((time-t)/step));for(let i=0;i<n;i++)update(step)},get time(){return t}};
+ return{preload,get debug(){return{idx,waiting,id:S[idx]?.id,shotT,endT}},get active(){return active},set hold(v){hold=v},start,update,skip:finish,bindPads(p,states){pads=p;padStates=states},seek(time,step=1/30){if(!active)return;const n=Math.max(0,Math.round((time-t)/step));for(let i=0;i<n;i++)update(step)},get time(){return t}};
 }

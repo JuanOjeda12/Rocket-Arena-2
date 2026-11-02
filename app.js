@@ -11,7 +11,7 @@ import {GoalEffects} from './goal-effects.js?v=final2';
 import {VfxHub} from './vfx.js?v=final1';
 import {BallTrail} from './ball-trail.js?v=rl-20261031';
 import {RenderBudget} from './render-budget.js?v=inventory-20261028';
-import {createControls} from './controls.js?v=rl-20261031b';
+import {createControls} from './controls.js?v=final2';
 import {PlayerHub} from './player-hub.js?v=final2';
 import {scoreboardHTML} from './scoreboard.js?v=inventory-20261028';
 import {PostMatch} from './post-match.js?v=inventory-20261028';
@@ -47,6 +47,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
  function tutorialDone(){const acc=hub.progress?.tutorial===true,ck=cookieDone();if(acc&&!ck)setCookie();if(ck&&!acc&&hub.account.user){hub.progress.tutorial=true;hub.account.persist()}return acc||ck}
  function markTutorial(){setCookie();if(hub.progress&&!hub.progress.tutorial){hub.progress.tutorial=true;hub.account.persist()}}
  async function startTutorial(back='home'){
+  await ensureControls(true);
   if(loading)return;loading=true;show('loading');
   try{
    const sim=await simulationReady;simulation=sim;const v=sim.view();
@@ -96,6 +97,24 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   preview.root.position.set(0,.17,30);camera.position.set(2,1.1,33.8);camera.lookAt(0,.4,30);camera.setViewOffset(innerWidth,innerHeight,-innerWidth*.27,innerHeight*.18,innerWidth,innerHeight);if(orb)dropStage.group.position.x=0;preview.setVisible(!orb,false);preview.flame.visible=selectedPreview?.category==='boost';if(orb)dropStage.update(dt,elapsed);else dropStage.hide();
  }
  function show(next,backTo='home'){if(!['inventory','missions','rocketpass','drop'].includes(next)){selectedPreview=null;preview.apply(profile)}screen=next;screenBack=backTo;front.hidden=false;renderFront()}
+ // Pregunta «con mouse / sin mouse»: antes de cada tutorial y una vez por sesión antes de jugar.
+ let ctlAsked=false,ctlPending=null;try{ctlAsked=sessionStorage.getItem('rocket-ctl-asked')==='1'}catch{}
+ function askControls(){
+  return new Promise(done=>{
+   const el=document.createElement('div');el.className='modal-shade';el.id='controls-ask';
+   const cur=controls.preset==='keyboard'?'keyboard':'original',opt=(id,title,sub)=>`<button class="ctl-opt ${cur===id?'current':''}" data-pick="${id}"><strong>${title}</strong><small>${sub}</small>${cur===id?'<em>ÚLTIMA ELECCIÓN</em>':''}</button>`;
+   el.innerHTML=`<section class="dialog panel" role="dialog" aria-modal="true" aria-label="Controles de PC"><span class="eyebrow">CONTROLES DE PC</span><h2>¿CON O SIN MOUSE?</h2><p class="muted">Elige cómo vas a jugar en esta sesión. Podrás cambiarlo cuando quieras en Configuración.</p><div class="ctl-options">${opt('original','CON MOUSE','W A S D conducir · Mouse derecho salta · Mouse izquierdo turbo')}${opt('keyboard','SIN MOUSE','W A S D conducir · Espacio salta · Shift turbo')}</div></section>`;
+   document.body.append(el);
+   const finish=id=>{removeEventListener('keydown',onKey,true);el.remove();if(id&&id!==cur)controls.setPreset(id);done()};
+   const onKey=e=>{if(e.code==='Escape'){e.preventDefault();e.stopImmediatePropagation();finish(null)}else if(e.code==='Digit1'||e.code==='Numpad1')finish('original');else if(e.code==='Digit2'||e.code==='Numpad2')finish('keyboard')};
+   addEventListener('keydown',onKey,true);el.addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(b)finish(b.dataset.pick)});el.querySelector('.current,.ctl-opt')?.focus();
+  });
+ }
+ async function ensureControls(force=false){
+  if(!force&&ctlAsked)return;
+  ctlPending??=askControls().then(()=>{ctlAsked=true;try{sessionStorage.setItem('rocket-ctl-asked','1')}catch{}}).finally(()=>ctlPending=null);
+  await ctlPending;
+ }
  // Identidad que se muestra de un coche: el jugador local usa la suya; los bots llevan el banner de su rango.
  function identityOf(c){
   if(c.slot===slot)return{name:profile.name,identity:hub.identity,sub:hub.rankLine()};
@@ -191,7 +210,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   if(a==='rematch'){if(source==='offline'){await offline(offlineOptions);return}network.send('restart');lastPhase='';session.start();return}
  }
  async function offline(options){
-  if(loading)return;loading=true;show('loading');await hub.ready;hub.abandon();options={...options,skill:options.skill??(options.difficulty==='competitive'?hub.skill(`${options.blue}v${options.blue}`):.15)};offlineOptions=options;
+  if(loading)return;await ensureControls();if(loading)return;loading=true;show('loading');await hub.ready;hub.abandon();options={...options,skill:options.skill??(options.difficulty==='competitive'?hub.skill(`${options.blue}v${options.blue}`):.15)};offlineOptions=options;
   try{simulation=await simulationReady;simulation.configure(options);slot=options.team===1?options.blue:0;simulation.assign(slot,profile,true);simulation.start();effects.reset();awardUntil=0;source='offline';room=null;stateA=stateB=simulation.view();hub.start(options,stateB);lastPhase='';label=options.training?'ENTRENAMIENTO':options.privateLocal?(options.difficulty==='competitive'?'NEXTO · PRIVADA LOCAL':'PARTIDA PRIVADA LOCAL'):`${options.difficulty==='competitive'?'COMPETITIVO':'CASUAL'} ${options.blue}v${options.orange}`;followCamera.reset();acc=0;session.start()}catch(e){toast(e.message);show('play','home')}finally{loading=false}
  }
  function leaveRoom(){tutorial?.stop();tutorialRun=false;hub.abandon();screen='home';session.pause();network?.send('leave');network?.close();network=null;room=null;admissions=[];$('admission').hidden=true;source='offline';stateA=stateB=null;show('home');preview.apply(profile)}
@@ -206,14 +225,14 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
  }
  async function connect(url){network?.close();network=new NetClient(url,networkMessage);await network.connect();return network}
  async function createRoom(form){
-  if(!form.reportValidity())return;const f=new FormData(form),options={name:f.get('name'),blue:+f.get('blue'),orange:+f.get('orange'),team:+f.get('team'),difficulty:'competitive',skill:rankBotSkill(f.get('rank')),public:f.get('public')==='on',password:f.get('public')==='on'?f.get('password'):''};
+  if(!form.reportValidity())return;await ensureControls();const f=new FormData(form),options={name:f.get('name'),blue:+f.get('blue'),orange:+f.get('orange'),team:+f.get('team'),difficulty:'competitive',skill:rankBotSkill(f.get('rank')),public:f.get('public')==='on',password:f.get('public')==='on'?f.get('password'):''};
   try{serverBase=serverURL($('server-address').value);await connect(serverBase);source='network';show('loading');network.send('create',{options,profile})}catch(e){toast(e.message);show('private','play')}
  }
  function showJoin(){
   $('join-modal').hidden=false;$('join-title').textContent=selectedRoom.name;$('join-password').value='';$('join-password').focus();
  }
  $('join-cancel').onclick=()=>$('join-modal').hidden=true;
- $('join-form').onsubmit=async e=>{e.preventDefault();try{serverBase=selectedRoom.url;await connect(serverBase);source='network';network.send('join',{id:selectedRoom.id,password:$('join-password').value,profile});$('join-modal').hidden=true;show('loading')}catch(error){toast(error.message)}};
+ $('join-form').onsubmit=async e=>{e.preventDefault();await ensureControls();try{serverBase=selectedRoom.url;await connect(serverBase);source='network';network.send('join',{id:selectedRoom.id,password:$('join-password').value,profile});$('join-modal').hidden=true;show('loading')}catch(error){toast(error.message)}};
  function updateLobby(){const target=$('lobby-players');if(!target||!stateB)return;target.innerHTML=[0,1].map(team=>`<div class="team-list ${team?'orange':'blue'}"><h3>${team?'NARANJA':'AZUL'}</h3>${stateB.cars.filter(c=>c.team===team).map(c=>`<p>${esc(c.profile?.name||'BOT')} <small>${c.profile?.human?'JUGADOR':'BOT'}${c.slot===slot?' · TÚ':''}</small></p>`).join('')}</div>`).join('')}
  function networkMessage(m){
   if(m.type==='loading'){show('loading');return}
@@ -335,6 +354,7 @@ try{let l=document.querySelector('link[rel~=icon]');if(!l){l=document.createElem
  intro=createIntro({scene,camera,renderer,stadium,vfx,createVehicle,audio,ball,ballShadow,getProfile:()=>profile,rig,onSkip:requestSkip,matches:(act,code)=>controls.matches(act,code),keyLabel:act=>controls.label(act)});
  show('home');simulationReady=Simulation.create({training:true,blue:1,orange:0}).then(s=>{simulation=s;return s}).catch(e=>{toast('No se pudo preparar la física. Recarga la página.');throw e});
  (async()=>{try{await hub.ready}catch{}if(tutorialDone())showTitle()})();
+  setTimeout(()=>intro.preload?.().catch(e=>console.warn('precarga de la intro',e)),1200);   // carga y calienta la intro antes de que se necesite
   requestAnimationFrame(frame);addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
  window.arenaApp={get state(){return{screen,source,profile,slot,room,phase:stateB?.phase,cars:stateB?.cars?.length,score:stateB?.score}},get ready(){return!!simulation}};
 }

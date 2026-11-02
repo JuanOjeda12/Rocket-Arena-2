@@ -122,3 +122,9 @@ body[data-screen=podio] #front,body[data-screen=admin] #front{background:linear-
 @media(max-width:800px){.home-caption .pcard{font-size:11px}}
 .podio-col.p1 .podio-step{min-height:140px}.podio-col.p2 .podio-step{min-height:104px}.podio-col.p3 .podio-step{min-height:80px}
 .id-opt.locked{opacity:.55;filter:grayscale(.5)}.id-opt.locked small{line-height:1.3}
+#controls-ask{z-index:60}
+.ctl-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.ctl-opt{position:relative;display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding:18px 16px;text-align:left}
+.ctl-opt strong{font:800 24px 'Barlow Condensed',Arial;letter-spacing:.1em}.ctl-opt small{font-size:12px;line-height:1.4;color:#bcd2e2}
+.ctl-opt.current{outline:2px solid #6fd7f2}.ctl-opt em{position:absolute;top:8px;right:10px;font:700 9px Barlow,Arial;letter-spacing:.14em;font-style:normal;color:#6fd7f2}
+@media(max-width:600px){.ctl-options{grid-template-columns:1fr}}

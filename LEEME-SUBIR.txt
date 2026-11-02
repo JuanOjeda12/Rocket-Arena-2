@@ -9,7 +9,7 @@ DESPUES DE SUBIR:
 3) Recarga con Ctrl+F5.
 4) Crea tu cuenta con juanojeda@e.correosanbartolo.edu.co y confirma el correo: esa cuenta es la administradora.
 
-ARCHIVOS (36):
+ARCHIVOS (37):
 accounts.js
 app.css
 app.js
@@ -20,6 +20,7 @@ bot-profile.js
 BOTS-POR-RANGO.md
 car-cosmetics.js
 catalog.js
+controls.js
 drop-stage.js
 game.js
 goal-effects.js

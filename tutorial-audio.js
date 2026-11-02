@@ -39,7 +39,7 @@ export function createTutorialAudio(){
    clips=a.clips.map(k=>({src:k.source,track:(k.line||1)-1,startAt:k.startAt,trimIn:k.sourceFrom||0,len:k.sourceLength,volume:k.volume??1,fadeIn:k.fadeIn||0,fadeOut:k.fadeOut||0}));
   },
   start(tFrom,fadeIn=.4,rate0=1,level0=1){
-   kill();if(!clips.length)return;const c=ensure(),now=c.currentTime+.05;
+   kill();if(!clips.length)return 0;const c=ensure(),now=c.currentTime+.05,p0=tFrom;
    // el sonido tarda un poco en llegar a los altavoces (más con Bluetooth): se adelanta esa latencia para que coincida con la imagen
    tFrom+=Math.min(.35,(c.outputLatency||0)+(c.baseLatency||0));const tEnd=Math.max(END,tFrom+.5);
    const master=c.createGain();master.connect(c.destination);const cs=c.createConstantSource();cs.offset.value=1200*Math.log2(Math.max(.05,rate0));cs.start();master.gain.setValueAtTime(fadeIn>0&&level0>=1?0:level0,now);if(fadeIn>0&&level0>=1)master.gain.linearRampToValueAtTime(1,now+Math.max(.01,fadeIn));
@@ -50,10 +50,14 @@ export function createTutorialAudio(){
     curve(src.playbackRate,t=>fxVal(t,k.track).rate,tA,tEnd,W);
     curve(g.gain,t=>{if(t>cEnd)return 0;const a=k.fadeIn>0?clamp01((t-k.startAt)/k.fadeIn):1,b=k.fadeOut>0?clamp01((cEnd-t)/k.fadeOut):1;return k.volume*a*b},tA,tEnd,W);
     src.start(W,off,Math.max(.01,Math.min(endM,buf.duration)-off));srcs.push(src)}
-   AU={srcs,master,cs}},
+   AU={srcs,master,cs,p:p0,x:now,rate:rate0};return now},   // devuelve el instante (reloj de audio) en el que suena el tiempo de proyecto pedido
   // sigue la velocidad y el volumen de la escena (cámara lenta): rate 1 = normal, level 0 = silencio
-  follow(rate,level){if(!AU)return;const c=ensure(),now=c.currentTime;AU.cs.offset.cancelScheduledValues(now);AU.cs.offset.setTargetAtTime(1200*Math.log2(Math.max(.05,rate)),now,.04);AU.master.gain.cancelScheduledValues(now);AU.master.gain.setTargetAtTime(Math.max(0,level),now,.04)},
+  follow(rate,level){if(!AU)return;const c=ensure(),now=c.currentTime;AU.p+=(now-AU.x)*AU.rate;AU.x=now;AU.rate=rate;AU.cs.offset.cancelScheduledValues(now);AU.cs.offset.setTargetAtTime(1200*Math.log2(Math.max(.05,rate)),now,.04);AU.master.gain.cancelScheduledValues(now);AU.master.gain.setTargetAtTime(Math.max(0,level),now,.04)},
   // se apaga poco a poco (el jugador está a punto de actuar) y al terminar se corta del todo
   fadeOut(sec=1.6){if(!AU)return;const c=ensure(),g=AU.master.gain,now=c.currentTime,my=token;g.cancelScheduledValues(now);g.setValueAtTime(g.value,now);g.linearRampToValueAtTime(0,now+Math.max(.05,sec));setTimeout(()=>{if(my===token)kill()},sec*1000+120)},
+  // tiempo de proyecto que marca el reloj de audio (null si no suena); sirve para mantener la imagen pegada al sonido
+  pos(){if(!AU)return null;return AU.p+(ensure().currentTime-AU.x)*AU.rate},
+  clock(){return ensure().currentTime},
+  async prime(){const c=ensure();if(c.state!=='running'){try{await c.resume()}catch{}}},
   stop:kill
  }}
