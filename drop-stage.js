@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {dropById,rarityById} from './item-catalog.js?v=inventory-20261028';
+import {dropById,rarityById} from './item-catalog.js?v=final2';
 import {softGlow} from './boost-visual.js?v=rl-20261031';
 export function createDropStage(scene){
  const group=new T.Group(),orb=new T.Group();scene.add(group);group.add(orb);group.visible=false;

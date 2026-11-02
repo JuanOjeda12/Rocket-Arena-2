@@ -1,7 +1,7 @@
 import http from 'node:http';import fs from 'node:fs/promises';import path from 'node:path';import {fileURLToPath} from 'node:url';
 import {Worker} from 'node:worker_threads';import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {WebSocketServer,WebSocket} from 'ws';
-import {cleanProfile} from '../catalog.js?v=inventory-20261028';import {startDiscovery,lanAddresses} from './discovery.mjs';
+import {cleanProfile} from '../catalog.js?v=final2';import {startDiscovery,lanAddresses} from './discovery.mjs';
 const root=path.resolve(fileURLToPath(new URL('../',import.meta.url))),mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.wasm':'application/wasm','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.png':'image/png','.jpg':'image/jpeg','.json':'application/json','.md':'text/plain'};
 export function createGameServer({port=Number(process.env.PORT)||8080,host=process.env.HOST||'0.0.0.0',discovery=true}={}){
  const rooms=new Map(),clients=new Set();let finder={peers:new Map(),close(){}};

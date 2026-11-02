@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {itemById} from './item-catalog.js?v=inventory-20261028';
+import {itemById} from './item-catalog.js?v=final2';
 const textures=new Map();
 function pattern(style){if(textures.has(style))return textures.get(style);const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const c=canvas.getContext('2d');c.clearRect(0,0,256,256);
  if(style==='white'){c.fillStyle='#fff';c.fillRect(0,0,256,256)}

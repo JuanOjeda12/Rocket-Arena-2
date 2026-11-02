@@ -1,22 +1,23 @@
-import {InventoryUI} from './inventory-ui.js?v=inventory-20261028';
-import {createDropStage} from './drop-stage.js?v=rl-20261031';
-import {itemById,DEFAULT_COSMETICS} from './item-catalog.js?v=inventory-20261028';
-import {rankBotSkill} from './bot-difficulty.js?v=rl-20261031';
+import {InventoryUI} from './inventory-ui.js?v=final2';
+import {createDropStage} from './drop-stage.js?v=final2';
+import {itemById,rarityById,DEFAULT_COSMETICS} from './item-catalog.js?v=final2';
+import {rankBotSkill,botRankFromSkill} from './bot-difficulty.js?v=final2';
+import {botIdentity,cardHTML,editorHTML,podioHTML,adminHTML,resizeAvatar} from './identity.js?v=final2';
 import {softGlow} from './boost-visual.js?v=rl-20261031';
 import {ONLINE_SERVER} from './online-config.js?v=inventory-20261028';
 import * as T from './vendor/three.module.js';
-import {createVehicle} from './vehicle-view.js?v=rl-20261031';import {CARS,cleanProfile} from './catalog.js?v=inventory-20261028';import {Simulation} from './simulation.js?v=rl-20261031';
-import {GoalEffects} from './goal-effects.js?v=inventory-20261028';
+import {createVehicle} from './vehicle-view.js?v=final2';import {CARS,cleanProfile} from './catalog.js?v=final2';import {Simulation} from './simulation.js?v=final2';
+import {GoalEffects} from './goal-effects.js?v=final2';
 import {VfxHub} from './vfx.js?v=final1';
 import {BallTrail} from './ball-trail.js?v=rl-20261031';
 import {RenderBudget} from './render-budget.js?v=inventory-20261028';
 import {createControls} from './controls.js?v=rl-20261031b';
-import {PlayerHub} from './player-hub.js?v=rl-20261031b';
+import {PlayerHub} from './player-hub.js?v=final2';
 import {scoreboardHTML} from './scoreboard.js?v=inventory-20261028';
 import {PostMatch} from './post-match.js?v=inventory-20261028';
 import {GameAudio} from './game-audio.js?v=inventory-20261028';
 import {FlipResetIndicator} from './flip-reset-visual.js?v=inventory-20261028';
-import {createIntro} from './intro.js?v=final1';import {logoSVG,logoFavicon} from './logo.js?v=rl-20261031';
+import {createIntro} from './intro.js?v=final2';import {logoSVG,logoFavicon} from './logo.js?v=rl-20261031';
 import {createBoostPads} from './boost-pads.js?v=rl-20261031';import {createPlaySession} from './play-session.js?v=inventory-20261028';import {NetClient,serverURL} from './net-client.js?v=inventory-20261028';import {constrainArenaCamera} from './arena-shape.js?v=inventory-20261028';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCamera,stadium,rig}){
@@ -26,6 +27,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
  let saved={};try{saved=JSON.parse(localStorage.getItem('rocket-garage')||'{}')}catch{}
  let profile=cleanProfile(saved),screen='home',screenBack='home',running=false,keys={},ballCam=false,simulation=null,simulationReady=null,loading=false;
  let source='offline',network=null,networkOwner=false,slot=0,room=null,netA=null,netB=null,netAt=0,lastInput=0,transport='lan',serverBase=location.origin,serverInfo=null,selectedRoom=null,admissions=[];
+ const podio={playlist:'2v2',status:'loading',rows:[],message:''},admin={tab:'pending',status:'loading',items:[],message:'',pendingCount:null},goalSeen=new Set(),RANK_NAMES=['Bronce','Plata','Oro','Platino','Diamante','Campeón','Gran Campeón','Leyenda Supersónica'];let goalCardUntil=0;
  let hub=null,offlineOptions=null,tabHeld=false,scoreAt=0,tutorialRun=false,intro=null,tutorial=null,holdSim=false,skipAsk=false,skipAll=false,titleEl=null,titleUp=false;
  const cookieDone=()=>/(?:^|; )rocket_tutorial=1/.test(document.cookie)||(()=>{try{return localStorage.getItem('rocket-intro-done')==='1'}catch{return false}})();   // la intro ya se vio en este dispositivo
  const setCookie=()=>{try{document.cookie='rocket_tutorial=1; max-age=31536000; path=/; SameSite=Lax'}catch{}try{localStorage.setItem('rocket-intro-done','1')}catch{}};
@@ -79,6 +81,7 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
  const back=()=>button('‹ VOLVER',screenBack,'back');
  const controls=createControls(front,()=>{keys={};renderFront();document.querySelector('.control-help').textContent=controls.hint();hub?.saveControls(controls.snapshot())});document.querySelector('.control-help').textContent=controls.hint();
  hub=new PlayerHub(data=>{profile=cleanProfile(data.garage);try{localStorage.setItem('rocket-garage',JSON.stringify(profile))}catch{}if(data.controls)controls.load(data.controls);document.querySelector('.control-help').textContent=controls.hint();preview.apply(profile);if(['home','profile','competitive','garage','inventory','missions','rocketpass'].includes(screen))renderFront()});
+ hub.onIdentity=()=>{if(['profile','home'].includes(screen))renderFront()};
  collection=new InventoryUI(hub,{render:()=>renderFront(),preview:previewItem,open:openReward,close:()=>{show('inventory','garage');previewItem(itemById(collection.selected))},toast});
  function previewItem(item){
   selectedPreview=item;if(item?.drop){dropStage.idle(item.drop);preview.setVisible(false);return}
@@ -93,7 +96,29 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   preview.root.position.set(0,.17,30);camera.position.set(2,1.1,33.8);camera.lookAt(0,.4,30);camera.setViewOffset(innerWidth,innerHeight,-innerWidth*.27,innerHeight*.18,innerWidth,innerHeight);if(orb)dropStage.group.position.x=0;preview.setVisible(!orb,false);preview.flame.visible=selectedPreview?.category==='boost';if(orb)dropStage.update(dt,elapsed);else dropStage.hide();
  }
  function show(next,backTo='home'){if(!['inventory','missions','rocketpass','drop'].includes(next)){selectedPreview=null;preview.apply(profile)}screen=next;screenBack=backTo;front.hidden=false;renderFront()}
- function mainMenu(){return `<div class="home-logo">${logoSVG({id:'menu',tagline:false})}</div><nav class="main-nav">${button('JUGAR','play')}${button('GARAJE','garage')}${button('INVENTARIO','inventory')}${button('MISIONES','missions')}${button('CONFIGURACIÓN','settings')}<button disabled>TIENDA <small>COMING SOON</small></button>${button('ROCKET PASS','rocketpass')}${button('PERFIL','profile')}</nav><div class="home-caption"><b>${esc(profile.name)}</b><span>${esc(CARS.find(c=>c.id===profile.body)?.name)} / LISTO PARA SALIR</span>${hub.levelHTML()}</div>`}
+ // Identidad que se muestra de un coche: el jugador local usa la suya; los bots llevan el banner de su rango.
+ function identityOf(c){
+  if(c.slot===slot)return{name:profile.name,identity:hub.identity,sub:hub.rankLine()};
+  const prof=c.profile||{};if(prof.human)return{name:prof.name||'Jugador',identity:null,sub:'JUGADOR'};
+  const sk=source==='offline'?(offlineOptions?.botSkills?.[c.slot]??offlineOptions?.skill):undefined,rank=sk==null?3:botRankFromSkill(sk);
+  return{name:prof.name||'BOT',identity:botIdentity(rank),sub:RANK_NAMES[Math.min(7,Math.floor(rank))].toUpperCase()};
+ }
+ function showGoalCard(ev,cars){
+  const c=cars.find(x=>x.slot===ev.slot);if(!c)return;const who=identityOf(c),el=$('goal-card');
+  el.innerHTML='<span class="gc-label">¡GOL!</span>'+cardHTML({...who,size:'md'});el.dataset.team=String(c.team);el.hidden=false;el.style.animation='none';void el.offsetWidth;el.style.animation='';goalCardUntil=elapsed+4.6;
+ }
+ async function loadPodio(){
+  const want=podio.playlist;podio.status='loading';if(screen==='podio')renderFront();
+  try{const rows=await hub.social.leaderboard(want);if(want!==podio.playlist)return;podio.rows=rows;podio.status='ok'}catch(e){if(want!==podio.playlist)return;podio.status='error';podio.message=e.message}
+  if(screen==='podio'&&want===podio.playlist)renderFront();
+ }
+ async function loadAdmin(tab){
+  admin.tab=tab;admin.status='loading';if(screen==='admin')renderFront();
+  try{const items=tab==='pending'?await hub.social.adminPending():tab==='approved'?await hub.social.adminApproved():await hub.social.adminPlayers();if(admin.tab!==tab)return;admin.items=items;if(tab==='pending')admin.pendingCount=items.length;admin.status='ok'}catch(e){if(admin.tab!==tab)return;admin.status='error';admin.message=e.message}
+  if(screen==='admin'&&admin.tab===tab)renderFront();
+ }
+ async function adminDo(run,done){try{await run();toast(done);await loadAdmin(admin.tab)}catch(e){toast(e.message)}}
+ function mainMenu(){return `<div class="home-logo">${logoSVG({id:'menu',tagline:false})}</div><nav class="main-nav">${button('JUGAR','play')}${button('GARAJE','garage')}${button('INVENTARIO','inventory')}${button('MISIONES','missions')}${button('CONFIGURACIÓN','settings')}<button disabled>TIENDA <small>COMING SOON</small></button>${button('ROCKET PASS','rocketpass')}${button('PERFIL','profile')}${button('PODIO','podio')}</nav><div class="home-caption"><button class="home-card" data-action="profile" title="Editar marco, banner y foto">${cardHTML({name:profile.name,identity:hub.identity,sub:hub.rankLine(),size:'md'})}</button>${hub.levelHTML()}</div>`}
  function card(title,sub,action,tone='blue',disabled=false){return `<button class="mode-card ${tone}" ${disabled?'disabled':`data-action="${action}"`}><span class="card-mark">${esc(title==='CASUAL'?'01':title==='COMPETITIVO'?'02':title==='ENTRENAMIENTO'?'∞':title)}</span><strong>${title}</strong><small>${disabled?'COMING SOON':sub}</small></button>`}
  function playMenu(){return `<div class="page-title">JUGAR</div><div class="card-grid">${card('CASUAL','Partidos contra bots','casual')}${card('COMPETITIVO','Bots más rápidos y exigentes','competitive','orange')}${card('TORNEOS','','','green',true)}${card('ENTRENAMIENTO','Free play / Play offline','training','purple')}${card('PARTIDA PRIVADA','Crear o unirse · LAN / ONLINE','private','teal')}${card('EXTRAS','','','red',true)}</div>${back()}`}
  function matchMenu(difficulty){return `<div class="page-title">${difficulty==='casual'?'CASUAL':'COMPETITIVO'}</div><p class="page-sub">${difficulty==='casual'?'Tú y tu equipo contra bots.':'Mismos equipos. Bots con reacción más rápida, mejor anticipación y uso de boost.'}</p><div class="card-grid">${[3,2,1].map(n=>`<div class="playlist-choice">`+card(`${n}v${n}`,n===1?'DUELO':n===2?'DOBLES':'ESTÁNDAR',`offline:${difficulty}:${n}`,difficulty==='casual'?'blue':'orange')+(difficulty==='competitive'?`<div class="playlist-rank rank-label">${hub.rankHTML(`${n}v${n}`)}</div>`:'')+'</div>').join('')}${['HEATSEEKER','DROPSHOT','KNOCKOUT','RUMBLE','HOOPS','SNOW DAY'].map(n=>card(n,'','','purple',true)).join('')}</div>${back()}`}
@@ -105,11 +130,12 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
  function pauseMenu(){return `<div class="pause-panel panel"><span class="eyebrow">${esc(label)}</span><h1>EN PAUSA</h1><p>${source==='network'?'Tu carro queda sin controles; los demás siguen jugando.':'La simulación está pausada.'}</p>${button('CONTINUAR','resume','primary')}${source==='offline'&&offlineOptions?.difficulty!=='competitive'||source==='network'&&networkOwner?button('REINICIAR SAQUE','reset'):''}${button(source==='network'?(networkOwner?'CERRAR SALA Y SALIR':'ABANDONAR SALA'):'VOLVER AL MENÚ','leave-room','danger')}</div>`}
  function results(){const score=stateB?.score||[0,0],own=stateB?.cars.find(c=>c.slot===slot);return `<div class="results-panel"><div class="result-summary"><span class="eyebrow">PARTIDO TERMINADO</span><h1>${score[0]>score[1]?'AZUL':'NARANJA'} GANA</h1><p class="result-score">${score[0]} — ${score[1]}</p><p class="personal-achievement">${esc(own?post.achievement(own):'')}</p><p id="post-caption" class="eyebrow">MEJORES JUGADAS</p><div class="result-actions">${source==='offline'||networkOwner?button('REVANCHA','rematch','primary'):''}${button('VOLVER AL MENÚ','leave-room')}</div>${hub.resultRankHTML(`${stateB.cars.filter(c=>c.team===0).length}v${stateB.cars.filter(c=>c.team===1).length}`)}${hub.awardHTML(false)}</div><div class="result-tables">${scoreboardHTML(stateB,slot)}</div></div>`}
 
- function podiumHTML(){return `<div class="victory-title ${post.winner===1?'orange':''}"><span>EQUIPO GANADOR</span><h1>${post.winner===0?'AZUL':'NARANJA'}</h1><p class="victory-mvp">MVP<br><b>+${post.state.stats.find(s=>s.slot===post.winners[0]?.slot)?.points||0}</b></p></div><div class="victory-labels">${post.winners.map((c,i)=>`<div class="victory-label" data-podium-slot="${c.slot}"><b>${esc(c.profile?.name||'BOT')}</b>${post.accolades(c).map(a=>`<span>${esc(a.title)}</span><small>${esc(a.detail)}</small>`).join('')}</div>`).join('')}</div><p class="victory-help">${post.winners.some(c=>c.slot===slot)?'Gira, salta y usa turbo para celebrar en tu puesto':'Celebración del equipo ganador'} · Los resultados aparecen enseguida</p>`}
+ function podiumHTML(){return `<div class="victory-title ${post.winner===1?'orange':''}"><span>EQUIPO GANADOR</span><h1>${post.winner===0?'AZUL':'NARANJA'}</h1><p class="victory-mvp">MVP<br><b>+${post.state.stats.find(s=>s.slot===post.winners[0]?.slot)?.points||0}</b></p></div><div class="victory-labels">${post.winners.map((c,i)=>`<div class="victory-label" data-podium-slot="${c.slot}">${cardHTML({...identityOf(c),size:'sm'})}${post.accolades(c).map(a=>`<span>${esc(a.title)}</span><small>${esc(a.detail)}</small>`).join('')}</div>`).join('')}</div><p class="victory-help">${post.winners.some(c=>c.slot===slot)?'Gira, salta y usa turbo para celebrar en tu puesto':'Celebración del equipo ganador'} · Los resultados aparecen enseguida</p>`}
  function renderFront(){
   front.hidden=screen==='game';document.body.dataset.screen=screen;
-  front.innerHTML=screen==='home'?mainMenu():screen==='play'?playMenu():screen==='casual'||screen==='competitive'?matchMenu(screen):screen==='garage'?garageMenu():screen==='inventory'?collection.inventoryHTML():screen==='missions'?collection.missionsHTML():screen==='rocketpass'?collection.passHTML():screen==='drop'?collection.dropHTML():screen==='profile'?hub.profileHTML():screen==='settings'?controls.html()+`<button data-action="sound-toggle" class="sound-toggle">SONIDO: ${audio.muted?'DESACTIVADO':'ACTIVADO'}</button><button data-action="flip-indicator-toggle" class="flip-setting">INDICADOR FLIP RESET: ${flipIndicator.enabled?'ACTIVADO':'DESACTIVADO'}</button><button data-action="intro-replay" class="intro-replay">VER INTRODUCCIÓN</button>`:screen==='private'?privateMenu():screen==='local-private'?localPrivateMenu():screen==='lobby'?lobbyMenu():screen==='pause'?pauseMenu():screen==='results'?results():screen==='podium'?podiumHTML():screen==='pending'?`<div class="pause-panel panel"><h1>ESPERANDO EQUIPO</h1><p>El anfitrión debe aprobar tu entrada y elegir tu equipo.</p>${button('CANCELAR','leave-room')}</div>`:`<div class="pause-panel panel"><h1>PREPARANDO…</h1><p>La simulación estará lista en unos segundos.</p></div>`;
+  front.innerHTML=screen==='home'?mainMenu():screen==='play'?playMenu():screen==='casual'||screen==='competitive'?matchMenu(screen):screen==='garage'?garageMenu():screen==='inventory'?collection.inventoryHTML():screen==='missions'?collection.missionsHTML():screen==='rocketpass'?collection.passHTML():screen==='drop'?collection.dropHTML():screen==='profile'?hub.profileHTML(editorHTML({name:profile.name,identity:hub.identity,signedIn:!!hub.account.user,configured:hub.account.configured,rankLine:hub.rankLine(),isAdmin:hub.isAdmin,owns:id=>hub.owns(id)})):screen==='podio'?podioHTML({...podio,meId:hub.account.user?.id,mine:cardHTML({name:profile.name,identity:hub.identity,sub:hub.rankLine(),size:'md'})}):screen==='admin'?adminHTML(admin):screen==='settings'?controls.html()+`<button data-action="sound-toggle" class="sound-toggle">SONIDO: ${audio.muted?'DESACTIVADO':'ACTIVADO'}</button><button data-action="flip-indicator-toggle" class="flip-setting">INDICADOR FLIP RESET: ${flipIndicator.enabled?'ACTIVADO':'DESACTIVADO'}</button><button data-action="intro-replay" class="intro-replay">VER INTRODUCCIÓN</button>`:screen==='private'?privateMenu():screen==='local-private'?localPrivateMenu():screen==='lobby'?lobbyMenu():screen==='pause'?pauseMenu():screen==='results'?results():screen==='podium'?podiumHTML():screen==='pending'?`<div class="pause-panel panel"><h1>ESPERANDO EQUIPO</h1><p>El anfitrión debe aprobar tu entrada y elegir tu equipo.</p>${button('CANCELAR','leave-room')}</div>`:`<div class="pause-panel panel"><h1>PREPARANDO…</h1><p>La simulación estará lista en unos segundos.</p></div>`;
   collection?.bind(front);
+  if(screen==='profile'){const f=$('avatar-file');if(f)f.onchange=async()=>{const file=f.files?.[0];f.value='';if(!file)return;try{toast('Procesando la foto…');const image=await resizeAvatar(file);await hub.social.submitAvatar(image);toast('Foto enviada. El administrador debe aprobarla antes de que se muestre.');renderFront()}catch(e){toast(e.message)}}}
   if(screen==='local-private')$('local-match').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);offline({blue:+f.get('blue'),orange:+f.get('orange'),team:+f.get('team'),difficulty:'competitive',skill:rankBotSkill(f.get('rank')),privateLocal:true})};
   if(screen==='garage'){
    $('driver-name').onchange=e=>{profile=cleanProfile({...profile,name:e.target.value});persist();preview.apply(profile)};
@@ -132,7 +158,21 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
    if(a==='sound-toggle'){audio.toggle();renderFront();return}
   if(a==='local-private'){show('local-private','private');return}
   if(a==='play'){await hub.ready;const go=()=>tutorialDone()?show('play','home'):startTutorial();if(!hub.canPlay){hub.openAuth(go);return}go();return}
-  if(a==='profile'){await hub.ready;show('profile','home');return}
+  if(a==='profile'){await hub.ready;show('profile','home');hub.social.refreshMine();return}
+  if(a==='podio'){await hub.ready;show('podio','home');loadPodio();return}
+  if(a.startsWith('podio:')){podio.playlist=a.split(':')[1];loadPodio();return}
+  if(a==='podio-refresh'){loadPodio();return}
+  if(a==='admin'){await hub.ready;if(!hub.isAdmin)return;show('admin','profile');loadAdmin('pending');return}
+  if(a.startsWith('admin-tab:')){loadAdmin(a.split(':')[1]);return}
+  if(a==='admin-refresh'){loadAdmin(admin.tab);return}
+  if(a.startsWith('admin-approve:')){await adminDo(()=>hub.social.review(a.split(':')[1],true),'Foto aprobada');return}
+  if(a.startsWith('admin-reject:')){const why=prompt('Motivo del rechazo (el jugador lo verá):','No cumple las normas');if(why===null)return;await adminDo(()=>hub.social.review(a.split(':')[1],false,why),'Foto rechazada');return}
+  if(a.startsWith('admin-revoke:')){if(!confirm('¿Retirar la foto de este jugador?'))return;await adminDo(()=>hub.social.revoke(a.split(':')[1]),'Foto retirada');return}
+  if(a.startsWith('admin-hide:')){const[,id,v]=a.split(':');await adminDo(()=>hub.social.setHidden(id,v==='1'),v==='1'?'Jugador oculto del podio':'Jugador visible en el podio');return}
+  if(a.startsWith('frame:')||a.startsWith('banner:')){const id=a.slice(a.indexOf(':')+1);if(!hub.owns(id)){toast('Aún no lo tienes.');return}hub.equip(id);renderFront();return}
+  if(a.startsWith('lock:')){const it=itemById(a.slice(5));toast(it?`Se consigue en drops de rareza ${rarityById(it.rarity).name.split(' · ')[0]} (misiones, Rocket Pass o drops).`:'Bloqueado');return}
+  if(a==='avatar-pick'){$('avatar-file')?.click();return}
+  if(a==='avatar-remove'){try{await hub.social.removeAvatar();toast('Foto quitada');renderFront()}catch(e){toast(e.message)}return}
   if(a==='account-login'){hub.openAuth(()=>show('profile'));return}
   if(a==='account-logout'){await hub.logout();show('profile');return}
   if(a==='home'||a==='play'||a==='garage'||a==='private'||a==='settings'){show(a,a==='private'?'play':'home');if(a==='home'||a==='garage')preview.apply(profile);return}
@@ -201,11 +241,12 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   if(e.code==='Tab'&&running){e.preventDefault();tabHeld=true;scoreAt=0;return}
   if(!running&&screen==='podium'){if(controls.used(e.code)){e.preventDefault();keys[e.code]=true}return}
   if(e.code==='Enter'&&tutorial?.active&&!tutorial.done&&!e.repeat&&!e.target?.closest?.('form,input,textarea')){e.preventDefault();requestSkip();return}
-  if(!running){if(e.code==='Escape'&&['garage','play','casual','competitive','private','local-private','settings','profile','inventory','missions','rocketpass'].includes(screen))show(screen==='casual'||screen==='competitive'?'play':'home');return}
+  if(!running){if(e.code==='Escape'&&['garage','play','casual','competitive','private','local-private','settings','profile','inventory','missions','rocketpass','podio','admin'].includes(screen))show(screen==='casual'||screen==='competitive'?'play':screen==='admin'?'profile':'home');return}
   if(controls.used(e.code)||e.code==='Escape')e.preventDefault();
   if(!keys[e.code]){if(e.code==='Escape')session.pause('escape');if(controls.matches('camera',e.code))ballCam=!ballCam;if(controls.matches('skip',e.code))source==='network'?network?.send('skip'):simulation?.skip();if(controls.matches('reset',e.code)){if(source==='offline'&&offlineOptions?.difficulty!=='competitive')simulation?.resetRound();else if(source==='network'&&networkOwner)network?.send('reset')}}keys[e.code]=true;
  });addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab'){tabHeld=false;$('match-scoreboard').hidden=true}});canvas.addEventListener('contextmenu',e=>e.preventDefault());canvas.addEventListener('mousedown',e=>{if(running||screen==='podium'&&e.target===canvas){e.preventDefault();keys['Mouse'+e.button]=true}});addEventListener('mouseup',e=>keys['Mouse'+e.button]=false);
  function paint(a,b,t){
+  if(b.phase==='goal')for(const ev of b.events||[])if(ev.type==='goal'&&ev.slot!=null&&!goalSeen.has(ev.id)){goalSeen.add(ev.id);showGoalCard(ev,b.cars)}
   effects.sync(b.events,slot,event=>{const epic=event.type==='epic-save';$('save-title').textContent=epic?'¡SALVADA ÉPICA!':'¡SALVADA!';$('save-award').dataset.epic=String(epic);$('save-award').style.animation='none';void $('save-award').offsetWidth;$('save-award').style.animation='';awardUntil=elapsed+2.8},b.cars);
   if(b.phase!=='highlight'&&Math.abs(camera.fov-matchFov)>6){camera.fov=matchFov;camera.updateProjectionMatrix()}
   if(!pads){pads=createBoostPads(scene,b.pads);pads.onPickup=(x,z,big)=>vfx.padPickup(x,z,big)}pads.update(b.pads,elapsed);preview.setVisible(false);
@@ -271,13 +312,13 @@ export function startApp({scene,camera,renderer,canvas,ball,ballShadow,followCam
   if(intro.active){intro.update(dt);$('hud').hidden=true;renderer.render(scene,camera);return}
   if(camera.view?.enabled)camera.clearViewOffset();const inMatch=['game','pause','podium','results','lobby'].includes(screen)&&!!stateB;painted=false;fxDelta=inMatch&&source==='offline'&&!running&&screen!=='results'?0:dt;
   $('hud').hidden=!inMatch;
-  $('save-award').hidden=!inMatch||elapsed>awardUntil||awardUntil===0;
+  $('save-award').hidden=!inMatch||elapsed>awardUntil||awardUntil===0;$('goal-card').hidden=!inMatch||elapsed>goalCardUntil||goalCardUntil===0;
   effects.update(inMatch&&source==='offline'&&!running&&screen!=='results'?0:dt,inMatch||['inventory','drop'].includes(screen));
   if(source==='offline'&&simulation&&(running||screen==='podium'||screen==='results')){let ctl=readInput();const tut=tutorial?.active&&running&&!tutorial.done;if(tut&&stateB){const me=stateB.cars.find(c=>c.slot===slot);if(me&&stateB.phase==='live')ctl=tutorial.control(ctl,me,stateB,dt)}acc+=dt*(holdSim?0:tut?tutorial.timeScale:1);while(acc>=1/120){simulation.tick(1/120,{[slot]:ctl});acc-=1/120}const next=simulation.view();stateA=stateB?.phase===next.phase?stateB:next;stateB=next}
   if(source==='network'&&netB){stateA=netA||netB;stateB=netB;if((running||screen==='podium')&&now-lastInput>1000/30){network.send('input',{controls:readInput()});lastInput=now}}
   if(source==='network'&&['podium','results'].includes(screen)&&stateB?.phase!=='finished'){lastPhase='';session.start()}
   if(inMatch&&stateB){post.observe(stateB,running||source==='network'?dt:0);if(screen!=='results'&&screen!=='podium')paint(stateA||stateB,stateB,source==='network'?Math.min(1,(now-netAt)/(1000/30)):1);if(stateB.phase==='finished'&&lastPhase!=='finished'){hub.finish(stateB,slot);post.finish(stateB,slot);screen='podium';paintPost.clip=null;paintPost.podiumReady=false;podiumPoses.clear();session.pause('finished');renderFront()}lastPhase=stateB.phase}
-  else{ballTrail.clear();for(const v of views.values())v.setVisible(false);preview.root.position.set(0,.17,30);preview.setVisible(!titleUp,false);preview.flame.visible=false;ball.visible=false;ballShadow.visible=false;$('replay').hidden=true;$('goal').hidden=true;document.body.classList.remove('replaying');if(camera.fov!==36){camera.fov=36;camera.updateProjectionMatrix()}camera.position.set(1.7+Math.sin(elapsed*.12)*.06,.85,32.2);camera.up.set(0,1,0);camera.lookAt(-.45,.38,30);if(titleUp){if(camera.fov!==58){camera.fov=58;camera.updateProjectionMatrix()}camera.position.set(-3+Math.sin(elapsed*.1)*.6,1.6,17);camera.up.set(0,1,0);camera.lookAt(1,6.5,-34)}}
+  else{ballTrail.clear();for(const v of views.values())v.setVisible(false);preview.root.position.set(0,.17,30);preview.setVisible(!titleUp&&screen!=='podio'&&screen!=='admin',false);preview.flame.visible=false;ball.visible=false;ballShadow.visible=false;$('replay').hidden=true;$('goal').hidden=true;document.body.classList.remove('replaying');if(camera.fov!==36){camera.fov=36;camera.updateProjectionMatrix()}camera.position.set(1.7+Math.sin(elapsed*.12)*.06,.85,32.2);camera.up.set(0,1,0);camera.lookAt(-.45,.38,30);if(titleUp){if(camera.fov!==58){camera.fov=58;camera.updateProjectionMatrix()}camera.position.set(-3+Math.sin(elapsed*.1)*.6,1.6,17);camera.up.set(0,1,0);camera.lookAt(1,6.5,-34)}}
   paintCollection(dt);
   $('match-scoreboard').hidden=!(tabHeld&&running&&inMatch);if(tabHeld&&running&&inMatch&&now-scoreAt>150){scoreAt=now;$('match-scoreboard').innerHTML=scoreboardHTML(stateB,slot)}
   if((screen==='results'||screen==='podium')&&post.finished)paintPost(dt);else podium.visible=false;

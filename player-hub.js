@@ -1,10 +1,12 @@
-import {equipItem,visitInventory,claimMission,claimPass,openDrop,collectDrop,recordInventoryMatch} from './inventory.js?v=inventory-20261028';
-import {AccountStore} from './accounts.js?v=rl-20261031b';
-import {botSkill,cleanProgress,completeResult,levelInfo,PLAYLISTS,rankBadge,rankInfo} from './progression.js?v=rl-20261031b';
+import {equipItem,visitInventory,claimMission,claimPass,openDrop,collectDrop,recordInventoryMatch} from './inventory.js?v=final2';
+import {AccountStore} from './accounts.js?v=final2';
+import {botSkill,cleanProgress,completeResult,levelInfo,PLAYLISTS,rankBadge,rankInfo} from './progression.js?v=final2';
+import {Social} from './social.js?v=final2';
+import {cleanIdentity} from './identity.js?v=final2';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export class PlayerHub{
  constructor(apply){
-  this.apply=apply;this.guestAccepted=false;this.context=null;this.award=null;
+  this.apply=apply;this.guestAccepted=false;this.context=null;this.award=null;this.social=new Social(this);this.onIdentity=null;
   this.account=new AccountStore(undefined,text=>{for(const e of document.querySelectorAll('[data-sync-status]'))e.textContent=text});
   this.modal=document.createElement('div');this.modal.className='modal-shade';this.modal.hidden=true;
   this.modal.innerHTML=`<section class="dialog panel account-dialog" role="dialog" aria-modal="true" aria-label="Cuenta de jugador"><span class="eyebrow">TU PERFIL</span><h2 id="account-title">CREAR CUENTA</h2><p class="muted" id="account-info"></p><form id="account-form"><label id="account-name-row">NOMBRE DE USUARIO<input name="username" autocomplete="nickname" maxlength="24" minlength="2"></label><label>EMAIL<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>CONTRASEÑA<input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><p id="account-error" role="status"></p><button class="primary" id="account-submit" type="submit">CREAR CUENTA</button></form><button id="account-switch">YA TENGO CUENTA</button><button id="account-guest">JUGAR COMO INVITADO</button><button id="account-close">CANCELAR</button></section>`;
@@ -35,12 +37,23 @@ export class PlayerHub{
  adopt(){
   this.account.data.progress=cleanProgress(this.progress);
   const pending=this.progress.pending;if(pending){const {progress}=completeResult(this.progress,{...pending,forfeit:true,won:false,seconds:0,stats:{}});this.account.data.progress=progress;this.account.persist()}
-  this.context=null;this.apply(this.account.data);
+  this.context=null;this.apply(this.account.data);this.social.refreshMine();
  }
- saveGarage(garage){if(garage.color!==this.account.data.garage.color)visitInventory(this.inventory,'paint');this.account.data.garage={...garage};this.account.persist()}
+ // Marco y banner son objetos del inventario (se equipan como el resto); la foto y su estado vienen de la cuenta.
+ get identity(){const g=this.account.data.garage.cosmetics||{};return{...this.account.data.identity,frame:g.frame,banner:g.banner}}
+ get isAdmin(){return this.social.isAdmin}
+ // Marco / banner (la foto solo cambia pasando por la revisión del administrador).
+ setIdentity(patch){this.account.data.identity=cleanIdentity({...this.identity,...patch});this.account.persist();this.social.queueSync()}
+ // Mejor rango entre las modalidades ya posicionadas, para la tarjeta del menú.
+ bestRank(){
+  let best=null;for(const p of PLAYLISTS){const r=this.rating(p),info=rankInfo(r);if(info.placed&&(!best||r.mmr>best.mmr))best={playlist:p,mmr:r.mmr,info}}
+  return best;
+ }
+ rankLine(){const b=this.bestRank();return b?`${b.info.name} · ${b.mmr} MMR · ${b.playlist}`:'Sin rango · juega competitivo'}
+ saveGarage(garage){if(garage.color!==this.account.data.garage.color)visitInventory(this.inventory,'paint');const rename=garage.name!==this.account.data.garage.name;this.account.data.garage={...garage};this.account.persist();if(rename)this.social.queueSync()}
  owns(id){return !!this.inventory.items[id]}
  visit(event){visitInventory(this.inventory,event);this.account.persist()}
- equip(id){this.account.data.garage=equipItem(this.inventory,this.account.data.garage,id);this.account.persist();this.apply(this.account.data);return this.account.data.garage}
+ equip(id){this.account.data.garage=equipItem(this.inventory,this.account.data.garage,id);this.account.persist();this.social.queueSync();this.apply(this.account.data);return this.account.data.garage}
  claimMission(group,id){const reward=claimMission(this.inventory,group,id);this.progress.xp+=reward.xp;this.account.persist();return reward}
  claimPass(tier){const reward=claimPass(this.inventory,tier);this.account.persist();return reward}
  openDrop(type){const result=openDrop(this.inventory,type);this.account.persist();this.account.flush();return result}
@@ -60,7 +73,7 @@ export class PlayerHub{
  skill(playlist){return botSkill(this.rating(playlist))}
  rankHTML(playlist){const r=rankInfo(this.rating(playlist));return `${rankBadge(r,45)}<span><b>${esc(r.name)}</b><small>${r.placed?(r.division?'División '+['I','II','III','IV'][r.division-1]:'Rango máximo'):r.placements+'/10 posicionamiento'}</small></span>`}
  levelHTML(){const level=levelInfo(this.progress.xp);return `<div class="player-level"><b>NIVEL ${level.level}</b><span>${level.current.toLocaleString('es')} / ${level.needed.toLocaleString('es')} XP</span><div class="xp-track"><i style="width:${level.current/level.needed*100}%"></i></div></div>`}
- profileHTML(){return `<div class="page-title">PERFIL</div><section class="panel player-profile"><span class="eyebrow">${this.account.user?'CUENTA CONECTADA':'INVITADO'}</span><h2>${esc(this.account.data.garage.name)}</h2><p class="muted" data-sync-status>${esc(this.account.status)}</p>${this.levelHTML()}<div class="rank-cards">${PLAYLISTS.map(p=>`<div><strong>${p}</strong><div class="rank-label">${this.rankHTML(p)}</div><small>${this.rating(p).mmr} MMR · ${this.rating(p).wins} victorias</small></div>`).join('')}</div><p>${this.progress.totals.matches} partidos · ${this.progress.totals.wins} victorias · ${this.progress.totals.goals} goles</p><p class="muted">Casual da experiencia y no cambia tus rangos. Cada modalidad competitiva tiene 10 posicionamientos y su propio MMR. Divisiones I–IV; ascensos por victorias y descensos por derrotas. Abandonar competitivo cuenta como derrota. Los umbrales y bots son propios de este juego.</p><button data-action="${this.account.user?'account-logout':'account-login'}">${this.account.user?'CERRAR SESIÓN':'CREAR CUENTA / ENTRAR'}</button></section><button data-action="home" class="back">‹ VOLVER</button>`}
+ profileHTML(extra=''){return `<div class="page-title">PERFIL</div><section class="panel player-profile"><span class="eyebrow">${this.account.user?'CUENTA CONECTADA':'INVITADO'}</span><h2>${esc(this.account.data.garage.name)}</h2><p class="muted" data-sync-status>${esc(this.account.status)}</p>${this.levelHTML()}<div class="rank-cards">${PLAYLISTS.map(p=>`<div><strong>${p}</strong><div class="rank-label">${this.rankHTML(p)}</div><small>${this.rating(p).mmr} MMR · ${this.rating(p).wins} victorias</small></div>`).join('')}</div><p>${this.progress.totals.matches} partidos · ${this.progress.totals.wins} victorias · ${this.progress.totals.goals} goles</p><p class="muted">Casual da experiencia y no cambia tus rangos. Cada modalidad competitiva tiene 10 posicionamientos y su propio MMR. Divisiones I–IV; ascensos por victorias y descensos por derrotas. Abandonar competitivo cuenta como derrota. Los umbrales y bots son propios de este juego.</p><button data-action="${this.account.user?'account-logout':'account-login'}">${this.account.user?'CERRAR SESIÓN':'CREAR CUENTA / ENTRAR'}</button></section>${extra}<button data-action="home" class="back">‹ VOLVER</button>`}
  start(options,state){
   this.award=null;this.context=null;if(options.training||options.privateLocal)return;
   const playlist=`${options.blue}v${options.blue}`,mode=options.difficulty==='competitive'?'competitive':'casual';
@@ -70,7 +83,7 @@ export class PlayerHub{
   if(!this.context||this.context.id!==state.matchId)return;
   const car=state.cars.find(c=>c.slot===slot),stats=state.stats?.find(s=>s.slot===slot)||{},ownTeam=car?.team??0,won=state.score[ownTeam]>state.score[1-ownTeam],best=Math.max(...(state.stats||[]).filter(r=>state.cars.some(c=>c.slot===r.slot&&c.team===ownTeam)).map(r=>r.points));
   const result=completeResult(this.progress,{...this.context,seconds:state.played,won,stats,mvp:won&&stats.points===best});
-  this.account.data.progress=result.progress;recordInventoryMatch(this.inventory,{id:state.matchId,seconds:state.played,won,stats,xp:result.award?.xp||0});this.award=result.award;this.context=null;this.account.persist();this.account.flush();
+  this.account.data.progress=result.progress;recordInventoryMatch(this.inventory,{id:state.matchId,seconds:state.played,won,stats,xp:result.award?.xp||0});this.award=result.award;this.context=null;this.account.persist();this.account.flush();this.social.queueSync();
  }
  abandon(){if(!this.context)return;const result=completeResult(this.progress,{...this.context,seconds:0,won:false,forfeit:true,stats:{}});this.account.data.progress=result.progress;this.context=null;this.award=null;this.account.persist()}
  resultRankHTML(playlist='1v1'){

@@ -1,4 +1,4 @@
-import {ITEMS,DEFAULT_COSMETICS,itemById,dropById,cleanCosmetics} from './item-catalog.js?v=inventory-20261028';
+import {ITEMS,DEFAULT_COSMETICS,itemById,dropById,cleanCosmetics} from './item-catalog.js?v=final2';
 const integer=n=>Math.max(0,Math.min(1e9,Math.floor(Number(n)||0)));
 const DAY=86400000,EPOCH=Date.parse('2026-10-26T00:00:00Z');
 export function seasonAt(now=Date.now()){const n=Math.max(0,Math.floor((now-EPOCH)/(28*DAY))),start=EPOCH+n*28*DAY;return{id:'arena-'+(n+1),number:n+1,start,end:start+28*DAY,stage:Math.min(3,Math.max(0,Math.floor((now-start)/(7*DAY))))}}
@@ -7,7 +7,7 @@ const stats=()=>({matches:0,wins:0,goals:0,saves:0,assists:0,shots:0,touches:0,p
 export function cleanInventory(value,legacyBody='octane',now=Date.now()){
  const v=value&&typeof value==='object'?value:{},season=seasonAt(now),counts=stats();for(const k of Object.keys(counts))counts[k]=integer(v.counters?.[k]);
  const items={};for(const [id,n] of Object.entries(v.items||{}))if(itemById(id)&&integer(n))items[id]=integer(n);
- for(const id of ['octane',...Object.values(DEFAULT_COSMETICS)])items[id]=Math.max(1,items[id]||0);
+ for(const id of ['octane',...Object.values(DEFAULT_COSMETICS),...ITEMS.filter(i=>i.rarity==='base').map(i=>i.id)])items[id]=Math.max(1,items[id]||0);
  if(!value&&itemById(legacyBody)?.category==='body')items[legacyBody]=1;
  const drops=Object.fromEntries(['sport','special','deluxe','import','exotic','blackmarket'].map(id=>[id,integer(v.drops?.[id])]));
  const period=(old,id)=>old?.id===id?{id,baseline:{...stats(),...old.baseline},claimed:Array.isArray(old.claimed)?old.claimed.filter(x=>typeof x==='string').slice(-80):[],xp:integer(old.xp),tiers:Array.isArray(old.tiers)?[...new Set(old.tiers.filter(n=>Number.isInteger(n)&&n>=1&&n<=30))]:[]}:{id,baseline:{...counts},claimed:[],xp:0,tiers:[]};

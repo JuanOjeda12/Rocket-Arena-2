@@ -39,7 +39,9 @@ export function createTutorialAudio(){
    clips=a.clips.map(k=>({src:k.source,track:(k.line||1)-1,startAt:k.startAt,trimIn:k.sourceFrom||0,len:k.sourceLength,volume:k.volume??1,fadeIn:k.fadeIn||0,fadeOut:k.fadeOut||0}));
   },
   start(tFrom,fadeIn=.4,rate0=1,level0=1){
-   kill();if(!clips.length)return;const c=ensure(),now=c.currentTime+.05,tEnd=Math.max(END,tFrom+.5);
+   kill();if(!clips.length)return;const c=ensure(),now=c.currentTime+.05;
+   // el sonido tarda un poco en llegar a los altavoces (más con Bluetooth): se adelanta esa latencia para que coincida con la imagen
+   tFrom+=Math.min(.35,(c.outputLatency||0)+(c.baseLatency||0));const tEnd=Math.max(END,tFrom+.5);
    const master=c.createGain();master.connect(c.destination);const cs=c.createConstantSource();cs.offset.value=1200*Math.log2(Math.max(.05,rate0));cs.start();master.gain.setValueAtTime(fadeIn>0&&level0>=1?0:level0,now);if(fadeIn>0&&level0>=1)master.gain.linearRampToValueAtTime(1,now+Math.max(.01,fadeIn));
    const chains=[0,1].map(k=>chain(c,k,master,tFrom,tEnd,now)),srcs=[];
    for(const k of clips){const buf=AB[k.src];if(!buf)continue;const cEnd=clipEnd(k);if(cEnd<=tFrom+.01)continue;

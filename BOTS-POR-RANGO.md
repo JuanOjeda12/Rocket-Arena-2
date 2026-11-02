@@ -1,17 +1,14 @@
 # Bots por rango
 
-Todo el balance está en UNA tabla: `TIERS` en `bot-difficulty.js` (8 valores por fila: Bronce → Leyenda Supersónica). Si un rango se siente fácil o difícil, cambia solo ese número.
+- Bronce: bot basico programado.
+- Plata: bot tactico programado.
+- Oro: Necto V1 reducido (beta .25, decisiones cada 24 ticks).
+- Platino: Necto V1 reducido (beta .55, 16 ticks).
+- Diamante: Necto V1 reducido (beta .85, 10 ticks).
+- Campeon: Nexto reducido.
+- Gran Campeon: Nexto ligeramente reducido.
+- Leyenda Supersonica: Nexto maximo, argmax y 8 ticks.
 
-Cada bot sigue por tramos de 1-3 s UN conductor completo (no se mezclan controles), y nunca cambia en pleno salto:
+Necto y Nexto son dos modelos oficiales diferentes. Los valores se interpolan dentro de cada rango. Los companeros de jugadores humanos conservan el mismo modelo de su rango y usan un nivel algo inferior. No se mezclan controles de distintos bots. Las etiquetas son una calibracion propia, no una certificacion del rango humano real.
 
-- Bronce / Plata: conductor sencillo, lento, con errores de puntería y sin Nexto.
-- Oro: mezcla del conductor sencillo con el conductor por reglas (ya anticipa el balón, usa turbo y rota). Sin Nexto.
-- Platino: conductor por reglas con speedflip. Sin Nexto.
-- Diamante: igual, con aéreos desde Diamante II. Sin Nexto.
-- Campeón: por reglas con tramos de Nexto (~18% al empezar, subiendo).
-- Gran Campeón: Nexto ~55% del tiempo, el resto por reglas.
-- Leyenda Supersónica: Nexto completo.
-
-Además hay un "factor humano" (temblor de dirección, despistes cortos y turbo no óptimo) que baja con el rango y es 0 en Leyenda. Solo actúa en el suelo.
-
-Estas son dificultades propias del prototipo, no una equivalencia certificada con jugadores reales. Los compañeros siguen un poco por debajo de los rivales. No se alteran cuentas, rangos ganados, inventario ni la física.
+Subir todos los archivos del parche conservando engine/necto/ y server/. Esperar Pages y Render y recargar con Ctrl+F5. No requiere cambios SQL.

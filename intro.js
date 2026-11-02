@@ -4,7 +4,7 @@ import {softGlow} from './boost-visual.js?v=rl-20261031';
 import {logoSVG} from './logo.js?v=rl-20261031';
 import {DemolitionFX} from './demolition-fx.js?v=demo1';
 import {FollowCamera} from './follow-camera.js?v=rl-20261031';
-import {createTutorialAudio} from './tutorial-audio.js?v=ta1';
+import {createTutorialAudio} from './tutorial-audio.js?v=final2';
 // Introducción cinematográfica nocturna: los reflectores se encienden, los LED recorren la cancha,
 // los aficionados (en 3D, solo aquí) celebran y un Octane salta sobre la cámara hasta que aparece el logo.
 const STYLE=`
@@ -151,7 +151,8 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  }
  // Saque: los dos coches con turbo contra el balón y explosión.
  // Cuenta atrás 3-2-1 (16.9 / 17.9 / 18.9 s del vídeo); el 3 ya aparece sobre el último plano del coche naranja.
- function digit(){const n=t<16.9||t>=TIMELINE.kick?0:t<17.9?3:t<18.9?2:1;if(n&&n!==lastCount){lastCount=n;count.textContent=n;count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');audio.tone(n===1?880:660,.35,.28,'sine')}}
+ let cdMute=false,lastWall=0,needAudio=false,wasHold=false;   // cdMute: si suena la pista de audio (trae su propia cuenta atrás) no se añade el pitido sintético
+ function digit(){const n=t<16.9||t>=TIMELINE.kick?0:t<17.9?3:t<18.9?2:1;if(n&&n!==lastCount){lastCount=n;count.textContent=n;count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');cdMute||audio.tone(n===1?880:660,.35,.28,'sine')}}
  // Pantalla de título (2.4–4.4 s del vídeo): cámara baja ante la pared de marcador y el balón en primer plano.
  function titleShot(){const k=Math.min(1,Math.max(0,(t-2.0)/2.4));ball.visible=true;ballShadow.visible=true;ball.position.set(5.5,.9125,10);ballShadow.position.set(5.5,.015,10);ballShadow.material.opacity=.22;ALL().forEach(a=>a?.setVisible(false,false));camera.position.set(lerp(-5,-3,k),lerp(1.3,1.6,k),lerp(20,17,k));camera.up.set(0,1,0);camera.lookAt(1,lerp(7,6.5,k),-34);camera.fov=58}
  // Tarjeta de estudio (0–1.9 s), título (2.0–4.4 s) y negro (4.4–9.4 s).
@@ -205,7 +206,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  }
  const burst=(key,c,rgb,n,sp,ttl)=>once(key,()=>bursts.add(c,rgb,n,sp,ttl));
  const boom=(key,c,big=1)=>once(key,()=>{bursts.add(c,[1,.72,.28],Math.round(420*big),16*big,1.6);bursts.add(c,[1,1,.9],Math.round(160*big),26*big,.8);audio.noise(1.6,.9,900);audio.tone(55,1,.7,'sine',22);flash.style.transition='none';flash.style.opacity=.85;requestAnimationFrame(()=>{flash.style.transition='opacity .6s';flash.style.opacity=0})});
- const goTxt=()=>once('go',()=>{count.textContent='GO!';count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');audio.tone(990,.4,.25,'sine')});
+ const goTxt=()=>once('go',()=>{count.textContent='GO!';count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop');cdMute||audio.tone(990,.4,.25,'sine')});
  // Cámara provisional: nunca sale del estadio (elipse de 40 x 50 m).
  const cam=(px,py,pz,lx,ly,lz,fov=50)=>{const q=(px/40)*(px/40)+(pz/50)*(pz/50);if(q>.88){const k=Math.sqrt(.88/q);px*=k;pz*=k}camera.position.set(px,Math.max(.6,py),pz);camera.up.set(0,1,0);camera.lookAt(lx,ly,lz);camera.fov=fov};
  let curShot='';const SM={p:new V3(),l:new V3(),id:''};
@@ -248,7 +249,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
  function ovApply(o){ensureOv();const h=(o.bars||0)*100+'%';ovEls.t.style.height=h;ovEls.b.style.height=h;ovEls.v.style.opacity=o.vig||0;ovEls.g.style.opacity=(o.grain||0)*.5;ovEls.g.style.backgroundPosition=`${Math.random()*160|0}px ${Math.random()*160|0}px`}
  function countdown(v){count.style.cssText='top:42%;font:italic 900 clamp(90px,22vh,260px) \'Barlow Condensed\',Impact,Arial Black,sans-serif;letter-spacing:.02em;color:#fff;text-shadow:0 0 30px #2d8cff,0 0 80px #1d6fff;z-index:3';const pop=txt=>{count.textContent=txt;count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop')};
   const n=v<3?Math.floor(Math.max(0,v)):v<3.9?3:4;if(n===lastCd)return;lastCd=n;
-  if(n<3){pop(String(3-n));audio.tone(440,.25,.2,'sine')}else if(n===3){pop('¡YA!');audio.tone(990,.4,.25,'sine')}else{count.classList.remove('pop');count.textContent=''}}
+  if(n<3){pop(String(3-n));cdMute||audio.tone(440,.25,.2,'sine')}else if(n===3){pop('¡YA!');cdMute||audio.tone(990,.4,.25,'sine')}else{count.classList.remove('pop');count.textContent=''}}
  function applyCam(v){const sec=CSEC.find(s=>v>=s.from&&v<=s.to);let o;
   if(sec){playerCam(v,sec);camera.position.copy(fcam2.position);camera.quaternion.copy(fcam2.quaternion);camera.fov=fcam2.fov;o={bars:sec.bars||0,vig:0,grain:0}}
   else{evalKeysK(v);camera.position.copy(OUTC.pos);camera.quaternion.copy(OUTC.q);camera.fov=OUTC.fov;o=OUTC}
@@ -403,6 +404,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   if(!TRK||!TRK.G||!TRK.G.frames||!TRK.G.marks)throw Error('La cinemática está desactualizada: recarga con Ctrl+F5');
   if(!CAM||LIVE){try{if(LIVE){const raw=localStorage.getItem('rocketArena.camEditor.live');CAM=raw?JSON.parse(raw):null;audLoaded=false}else{const r=await fetch(new URL('./camaras-tutorial.json?v=final1',import.meta.url),{cache:'no-cache'});if(r.ok)CAM=await r.json()}}catch{}}
   if(CAM&&CAM.audio&&!audLoaded){audLoaded=true;try{await TA.load(CAM,loadAudioBytes)}catch(e){console.warn(e)}}
+  cdMute=!!(CAM&&CAM.cameraKeys&&TA.hasAudio);
   buildShots();
   return new Promise(done=>{
    if(active)return done();
@@ -413,7 +415,7 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
    if(!B){B=createVehicle(scene);R=createVehicle(scene);O=createVehicle(scene);W=createVehicle(scene);[[B,0,0],[R,1,0],[O,2,1],[W,3,1]].forEach(([c,sl,tm])=>{c.__slot=sl;c.__team=tm})}
    B.apply(getProfile());R.apply({name:'Aliado',body:'octane',color:'#1d6fd8'});O.apply({name:'Rival',body:'octane',color:'#ff8b32'});W.apply({name:'Rival',body:'octane',color:'#ff8b32'});
    vehicle=B;orange=O;ALL().forEach(c=>c.setVisible(false,false));bigFlame.clear();if(TRK)TRK.G.last=-1;
-   ready=root.querySelector('.ready');goalword=root.querySelector('.goalword');idx=-1;shotT=0;endT=0;waiting=false;held=0;prevDown={};PT=-19.6;promptFor=null;preOK=false;rmp=-1;if(TA.hasAudio)TA.start(-19.6,.3);pressedPointer=false;downKeys.clear();black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');ready.classList.remove('on');goalword.classList.remove('on');frameCars.length=0;
+   ready=root.querySelector('.ready');goalword=root.querySelector('.goalword');idx=-1;shotT=0;endT=0;waiting=false;held=0;prevDown={};PT=-19.6;promptFor=null;preOK=false;rmp=-1;needAudio=true;lastWall=0;pressedPointer=false;downKeys.clear();black.style.opacity=0;logo.classList.remove('show');dim.classList.remove('on');promptEl.classList.remove('on');ready.classList.remove('on');goalword.classList.remove('on');frameCars.length=0;
    ball.visible=true;ball.position.set(0,.9125,0);ballShadow.visible=true;ballShadow.position.set(0,.015,0);ballShadow.material.opacity=.22;
    const keyHandler=e=>{if(!active||hold)return;if(e.target?.closest?.('form,input,textarea'))return;if(e.code==='Enter'&&!e.repeat){e.preventDefault();e.stopImmediatePropagation();onSkip();return}downKeys.add(e.code);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault()};
    const upHandler=e=>downKeys.delete(e.code),mdown=e=>{downKeys.add('Mouse'+e.button)},mup=e=>downKeys.delete('Mouse'+e.button);
@@ -429,8 +431,13 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   setTimeout(()=>{root.hidden=true},600);root.style.pointerEvents='none';
   const r=resolve;resolve=null;r?.();
  }
- function update(dt){
-  if(!active||hold)return;
+ function update(dt0){
+  // El tiempo de la intro es el del reloj real (igual que el audio): con el dt recortado del juego, cualquier tirón (carga de sombras, pestaña lenta) retrasaba la imagen y el sonido se adelantaba.
+  const wall=performance.now();let dt=lastWall?Math.min(.5,(wall-lastWall)/1000):Math.min(dt0,.05);lastWall=wall;
+  if(!active)return;
+  if(hold){if(!wasHold){wasHold=true;TA.stop()}return}   // pausa (p. ej. ventana de inicio de sesión): el audio también se detiene
+  if(wasHold){wasHold=false;if(TA.hasAudio&&!waiting)TA.start(PT,.3)}
+  if(needAudio){needAudio=false;dt=Math.min(dt,.05);if(TA.hasAudio)TA.start(PT,.3)}   // el audio arranca con el primer fotograma ya dibujado, no antes
   t+=dt;const T0=TIMELINE;
   lights();night();if(t<T0.kick)PT=t-T0.kick;
   stage();frameCars.length=0;

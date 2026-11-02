@@ -1,26 +1,48 @@
-﻿SUBIR A GITHUB - introduccion nueva
-===================================
-Esta carpeta tiene SOLO lo nuevo y lo modificado. Sube TODO su contenido a la raiz de tu repositorio,
-respetando las carpetas (la carpeta audio/ incluida), y acepta reemplazar los archivos que ya existen.
+﻿SUBIR A GITHUB - PODIO, MARCOS/BANNERS POR RANGO Y BOTS NUEVOS
+===============================================================
+Sube el CONTENIDO de esta carpeta a la raiz de tu repositorio (respetando engine/necto, server y setup) y acepta reemplazar los archivos existentes.
+OPCIONAL: borra del repositorio ranked-brain.js y bot-humanizer.js (ya no se usan).
 
-NUEVOS (6):
-  - camaras-tutorial.json
-  - demolition-fx.js
-  - intro-track.json
-  - tutorial-audio.js
-  - audio\INTRO TUTORIAL CUTSCENE _ ROCKET LEAGUE.mp4
-  - audio\LEEME.txt
+DESPUES DE SUBIR:
+1) Supabase > SQL Editor: ejecuta setup/perfiles-publicos.sql (una sola vez). Sin esto el podio y las fotos no funcionan.
+2) Render: redespliega el ultimo commit si usas servidor online.
+3) Recarga con Ctrl+F5.
+4) Crea tu cuenta con juanojeda@e.correosanbartolo.edu.co y confirma el correo: esa cuenta es la administradora.
 
-MODIFICADOS (6):
-  - app.css
-  - app.js
-  - game.js
-  - index.html
-  - intro.js
-  - vfx.js
-
-Notas
-- El MP4 de audio pesa 23,6 MB: la web de GitHub admite hasta 25 MB por archivo (por git, hasta 100 MB).
-- Los archivos tienen una version de cache nueva (?v=final1) para que GitHub Pages no mezcle archivos viejos y nuevos.
-  Despues de publicar, recarga con Ctrl+F5 la primera vez.
-- Esta carpeta REEMPLAZA a la antigua SUBIR-A-GITHUB (que ya no sirve).
+ARCHIVOS (36):
+accounts.js
+app.css
+app.js
+ASSET-CREDITS.md
+basic-bot.js
+bot-difficulty.js
+bot-profile.js
+BOTS-POR-RANGO.md
+car-cosmetics.js
+catalog.js
+drop-stage.js
+game.js
+goal-effects.js
+identity.js
+index.html
+intro.js
+inventory-ui.js
+inventory.js
+item-catalog.js
+LEEME-PODIO.md
+necto-controller.js
+necto-model.js
+nexto-controller.js
+opponent-ai.js
+player-hub.js
+progression.js
+simulation.js
+social.js
+tutorial-audio.js
+vehicle-view.js
+engine\necto\necto.js
+engine\necto\necto.wasm
+engine\necto\weights.bin
+server\index.mjs
+server\room-worker.mjs
+setup\perfiles-publicos.sql

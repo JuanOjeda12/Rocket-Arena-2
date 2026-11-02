@@ -1,4 +1,4 @@
-import {cleanCosmetics} from './item-catalog.js?v=inventory-20261028';
+import {cleanCosmetics} from './item-catalog.js?v=final2';
 export const CARS=[
  {id:'octane',name:'Octane',path:'./assets/octane.glb',kind:0,rotation:Math.PI/2,length:1.4,tint:/Paint|Octane_Body/i,credit:'Jako · CC BY 4.0'},
  {id:'fennec',name:'Fennec',path:'./assets/cars/fennec/scene.gltf',kind:1,rotation:Math.PI/2,length:1.43,tint:/Paint|Fennec.*Body/i,credit:'Jako · CC BY 4.0'},

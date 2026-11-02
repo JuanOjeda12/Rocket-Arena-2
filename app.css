@@ -64,3 +64,61 @@ body[data-screen=podium] #front{background:radial-gradient(ellipse at 50% 45%,tr
 #title-screen .ts-logo{width:min(54vw,740px)}#title-screen .ts-logo svg{display:block;width:100%;height:auto;filter:drop-shadow(0 0 28px rgba(40,140,255,.45))}
 #title-screen .ts-press{margin-top:6vh;font:600 clamp(12px,1.3vw,19px) Barlow,Arial,sans-serif;letter-spacing:.22em;color:#6fd7f2;text-shadow:0 0 10px #1a8fb0;animation:tsBlink 1.7s ease-in-out infinite}
 @keyframes tsBlink{0%,100%{opacity:.35}50%{opacity:1}}@keyframes tsIn{from{opacity:0}to{opacity:1}}
+
+/* ───── Tarjetas de jugador: marco + foto + banner (dibujo propio, estilo de las recompensas de temporada) ───── */
+.pcard{--f1:#8fa6b8;--f2:#3a4a58;--fa:#cfe3f2;--b1:#8fa6b8;--b2:#3a4a58;--b3:#0c141b;--ba:#cfe3f2;position:relative;display:inline-flex;align-items:center;font-size:14px;height:4em;min-width:20em;max-width:100%;color:#fff;font-family:'Barlow Condensed',Barlow,Arial,sans-serif;filter:drop-shadow(0 .3em .45em #000b);user-select:none;text-align:left}
+.pcard.sm{font-size:10px;min-width:20em}.pcard.md{font-size:13px}.pcard.lg{font-size:19px}
+.pc-frame{position:relative;z-index:2;flex:none;display:block;width:4em;height:4em;background:linear-gradient(135deg,var(--f1),var(--f2) 58%,var(--f1));clip-path:polygon(0 0,100% 0,100% 82%,86% 100%,0 100%)}
+.pc-frame.mini{width:3.4em;height:3.4em;font-size:12px;margin:0 auto;display:block}
+.pc-avatar{position:absolute;inset:.2em;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 40% 30%,#17222d,#04070b 72%);box-shadow:inset 0 0 0 .08em color-mix(in srgb,var(--fa) 45%,transparent)}
+.pc-avatar img{width:100%;height:100%;object-fit:cover;display:block}.pc-avatar b{font:700 2.2em/1 'Barlow Condensed',Arial;color:var(--fa);opacity:.88;text-shadow:0 0 .4em var(--f1)}
+.pc-badge{position:absolute;left:.08em;top:.06em;z-index:3;display:grid;place-items:center;width:1.25em;height:1.25em;background:#050a10d9;color:var(--fa);clip-path:polygon(0 0,100% 0,0 100%);padding:.05em 0 0 .05em}
+.pc-badge svg{width:.8em;height:.8em}
+.pc-tally{position:absolute;right:.18em;bottom:.1em;z-index:3;font:italic 800 .95em/1 'Barlow Condensed',Arial;letter-spacing:.06em;color:var(--fa);text-shadow:0 0 .3em #000}
+.pc-bar{position:relative;flex:1;min-width:0;height:2.7em;margin-left:-.3em;padding:.2em 3.6em .2em 1em;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,var(--b1) 0,var(--b2) 50%,var(--b3) 52%,var(--b2) 100%);box-shadow:inset 0 .08em 0 #fff6,inset 0 -.1em 0 #0006}
+.pc-name{display:block;font:700 1.45em/1 'Barlow Condensed',Arial;letter-spacing:.05em;text-transform:uppercase;text-shadow:0 .08em .22em #000a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-sub{display:block;margin-top:.15em;font:600 .78em/1 'Barlow Condensed',Arial;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:.88;text-shadow:0 .08em .2em #000a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-end{position:absolute;right:0;top:0;bottom:0;width:3.6em;display:grid;place-items:center;color:var(--ba);background:linear-gradient(180deg,#0e141b,#05080c);clip-path:polygon(24% 0,100% 0,100% 100%,0 100%);padding-left:.5em}
+.pc-end svg{filter:drop-shadow(0 0 .3em var(--ba))}
+.pc-tag{position:absolute;right:3.8em;top:-.9em;z-index:4;font:700 .75em 'Barlow Condensed',Arial;letter-spacing:.14em;font-style:normal;padding:.15em .6em;background:#6fd7f2;color:#04202c;border-radius:.2em}
+.home-caption .home-card{padding:0;border:0;background:none;box-shadow:none;transform:none;text-align:left}
+.home-caption .home-card:hover{filter:brightness(1.12)}
+#goal-card{position:fixed;left:2.4vw;bottom:118px;z-index:12;pointer-events:none;animation:gcIn .5s cubic-bezier(.2,.9,.25,1.1) both}
+#goal-card .gc-label{display:block;margin:0 0 .5em .4em;font:800 22px/1 'Barlow Condensed',Arial;letter-spacing:.3em;color:#fff;text-shadow:0 0 14px #53beff}
+#goal-card[data-team="1"] .gc-label{text-shadow:0 0 14px #ffa455}
+@keyframes gcIn{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
+.identity-panel{max-width:900px;margin:18px 0}.identity-panel h3{margin:20px 0 8px;font:700 15px 'Barlow Condensed',Arial;letter-spacing:.2em;color:#9fd8ff}
+.id-preview{margin:14px 0 6px;padding:18px 20px 14px;background:#0008;border-radius:8px;overflow:auto}
+.id-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.id-opt{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px 7px;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.id-opt.selected{outline:2px solid #6fd7f2;background:linear-gradient(115deg,#1b5a80ee,#0f3a55ef)}
+.pc-mini{position:relative;display:block;width:100%;height:22px;background:linear-gradient(180deg,var(--b1),var(--b2) 50%,var(--b3) 52%,var(--b2))}
+.pc-mini-end{position:absolute;right:0;top:0;bottom:0;width:34px;display:grid;place-items:center;color:var(--ba);background:#070b10;clip-path:polygon(24% 0,100% 0,100% 100%,0 100%);padding-left:6px;font-style:normal}
+.id-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.id-status{margin:4px 0;font-size:13px}.id-status[data-status=pending]{color:#ffd35b}.id-status[data-status=approved]{color:#74d6ab}.id-status[data-status=rejected]{color:#ff8a98}
+button.danger,.danger{border-color:#ff6f7f88}
+body[data-screen=podio] #front,body[data-screen=admin] #front{background:linear-gradient(180deg,#06121bf0,#081824e6)}
+.podio-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.podio-tabs .selected{outline:2px solid #6fd7f2;background:linear-gradient(115deg,#1b5a80ee,#0f3a55ef)}
+.podio-mine{margin:8px 0 6px}.podio-mine .eyebrow{display:block;margin-bottom:8px}
+.podio-top{display:flex;align-items:flex-end;justify-content:center;gap:clamp(10px,2.2vw,34px);margin:26px 0 16px;flex-wrap:wrap}
+.podio-col{display:flex;flex-direction:column;align-items:center;gap:10px}.podio-col.p1{order:2}.podio-col.p2{order:1}.podio-col.p3{order:3}
+.podio-step{width:100%;padding:12px 8px 10px;text-align:center;background:linear-gradient(180deg,#ffffff24,#ffffff0a);border-top:3px solid #6fd7f2}
+.podio-col.p1 .podio-step{padding-top:34px;border-top-color:#ffd35b}.podio-col.p2 .podio-step{padding-top:22px;border-top-color:#d4e2ee}.podio-col.p3 .podio-step{padding-top:12px;border-top-color:#e8a05a}
+.podio-step b{display:block;font:800 44px/1 'Barlow Condensed',Arial}.podio-step small{display:block;color:#bcd2e2;letter-spacing:.1em}
+.podio-list{display:flex;flex-direction:column;gap:8px;max-width:860px;margin:10px auto 0}
+.podio-row{display:flex;align-items:center;gap:14px;padding:6px 10px;background:#0a1a26b0;border-radius:6px}.podio-row.me{outline:2px solid #6fd7f2}
+.podio-pos{flex:none;width:38px;text-align:center;font:800 24px 'Barlow Condensed',Arial;color:#9fd8ff}.podio-row .pcard{flex:1}
+.podio-mmr{display:flex;align-items:center;gap:6px;min-width:96px;justify-content:flex-end}.podio-mmr b{font:800 22px 'Barlow Condensed',Arial}.podio-mmr small{color:#9fb8c8}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:12px 0}
+.admin-item{display:flex;gap:14px;padding:12px;background:#0a1a26c0;border-radius:8px;align-items:flex-start}.admin-item img{width:128px;height:128px;object-fit:cover;background:#000;border-radius:4px;flex:none}
+.admin-item b{display:block;font-size:18px}.admin-item small{display:block;color:#9fb8c8;margin:3px 0 10px}.admin-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.admin-table{display:flex;flex-direction:column;gap:6px;max-width:900px}.admin-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 12px;background:#0a1a26c0;border-radius:6px}.admin-row b{min-width:150px}.admin-row small{flex:1;color:#9fb8c8}.admin-row.hidden-player{opacity:.6}
+@media(max-width:800px){#goal-card{bottom:150px}.pcard.md{font-size:11px}.pcard{min-width:17em}.podio-mmr{display:none}.admin-item{flex-direction:column}}
+/* las reglas del menú (.home-caption span/b) no deben tocar el interior de la tarjeta */
+.pcard .pc-name{display:block;font:700 1.45em/1 'Barlow Condensed',Arial;letter-spacing:.05em;color:#fff}
+.pcard .pc-sub{display:block;font:600 .78em/1 'Barlow Condensed',Arial;letter-spacing:.12em;color:#fff}
+.pcard .pc-frame{display:block}.pcard .pc-avatar{display:grid}.pcard .pc-avatar b{font:700 2.2em/1 'Barlow Condensed',Arial;color:var(--fa)}
+.pcard .pc-end,.pcard .pc-badge{display:grid}
+.home-caption .pcard{font-size:15px}
+@media(max-width:800px){.home-caption .pcard{font-size:11px}}
+.podio-col.p1 .podio-step{min-height:140px}.podio-col.p2 .podio-step{min-height:104px}.podio-col.p3 .podio-step{min-height:80px}
+.id-opt.locked{opacity:.55;filter:grayscale(.5)}.id-opt.locked small{line-height:1.3}

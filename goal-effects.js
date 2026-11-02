@@ -1,4 +1,4 @@
-import {itemById} from './item-catalog.js?v=inventory-20261028';
+import {itemById} from './item-catalog.js?v=final2';
 import * as T from './vendor/three.module.js';
 export class GoalEffects{
  constructor(scene){

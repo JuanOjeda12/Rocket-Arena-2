@@ -1,5 +1,5 @@
 import {predictBall,incomingShot} from './ball-prediction.js?v=inventory-20261028';
-import {botProfile} from './bot-profile.js?v=inventory-20261028';
+import {botProfile} from './bot-profile.js?v=final2';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const distance=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
 const angleTo=(f,dx,dz)=>Math.atan2(f.x*dz-f.z*dx,f.x*dx+f.z*dz);
@@ -18,8 +18,7 @@ export function shotTarget(ball,enemies=[],mates=[]){
  return best;
 }
 export class OpponentAI{
- constructor(options={}){this.difficulty=options.difficulty||'competitive';this.tuning=options.tuning||botProfile(this.difficulty,options.skill);this.reset()}
- setTuning(tuning){this.tuning=tuning}
+ constructor(options={}){this.difficulty=options.difficulty||'competitive';this.tuning=botProfile(this.difficulty,options.skill);this.reset()}
  reset(){this.time=0;this.nextThink=0;this.lastThink=0;this.controls={};this.intent='Read play';this.jumpStart=-100;this.jumpReady=0;this.jumpMode='';this.lastTouch=-100;this.reverseUntil=0;this.stuck=0;this.previousPosition=null;this.previousForward=null;this.previousUp=null;this.airUntil=0;this.airContact=false;this.wasReversing=false;this.commitUntil=0;this.recoverUntil=0}
  update(state,dt){
   this.time+=dt;if(this.time<this.nextThink)return this.controls;
