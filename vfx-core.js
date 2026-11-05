@@ -24,6 +24,7 @@ export class PointPool{
   this.points=new T.Points(this.geometry,this.material);this.points.frustumCulled=false;this.points.renderOrder=additive?8:6;scene.add(this.points);
  }
  spawn(x,y,z,vx,vy,vz,life,s0,s1,c0,c1,a0=1,a1=0,drag=0,grav=0){
+  if(this.keep<1&&Math.random()>this.keep)return;   // calidad gráfica baja: menos partículas
   const i=this.head;this.head=(this.head+1)%this.max;
   this.pos[i*3]=x;this.pos[i*3+1]=y;this.pos[i*3+2]=z;this.vel[i*3]=vx;this.vel[i*3+1]=vy;this.vel[i*3+2]=vz;
   this.life[i]=life;this.age[i]=0;this.s0[i]=s0;this.s1[i]=s1;this.a0[i]=a0;this.a1[i]=a1;this.drag[i]=drag;this.grav[i]=grav;
@@ -56,6 +57,7 @@ export class SparkLines{
   this.lines=new T.LineSegments(this.geometry,new T.LineBasicMaterial({vertexColors:true,transparent:true,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false}));this.lines.frustumCulled=false;this.lines.renderOrder=9;scene.add(this.lines);
  }
  spawn(x,y,z,vx,vy,vz,life,color,gravity=8,trail=.03,alpha=1){
+  if(this.keep<1&&Math.random()>this.keep)return;
   const i=this.head,j=i*3;this.head=(this.head+1)%this.max;
   this.pos[j]=x;this.pos[j+1]=y;this.pos[j+2]=z;this.vel[j]=vx;this.vel[j+1]=vy;this.vel[j+2]=vz;this.life[i]=life;this.age[i]=0;this.col[j]=color[0];this.col[j+1]=color[1];this.col[j+2]=color[2];this.grav[i]=gravity;this.trail[i]=trail;this.alpha[i]=alpha;
  }
