@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {airEventAt} from './stadium-time.js?v=inventory-20261028';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
+import {softGlow} from './boost-visual.js?v=final2';
 export function createAirTraffic(scene){
  const plane=new T.Group(),white=new T.MeshStandardMaterial({color:0xe3e8ee,roughness:.65}),blue=new T.MeshStandardMaterial({color:0x2782bd,roughness:.6});
  const body=new T.Mesh(new T.CylinderGeometry(.24,.3,5.2,8),white);body.rotation.z=Math.PI/2;plane.add(body);

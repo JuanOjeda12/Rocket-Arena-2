@@ -1,4 +1,4 @@
-import {ARENA} from './arena-shape.js?v=inventory-20261028';
+import {ARENA} from './arena-shape.js?v=final2';
 import {BALL_RADIUS} from './proportions.js?v=inventory-20261028';
 export function goalFrameHit(before,after,radius=BALL_RADIUS){
  if(!before||!after)return false;const p=after.position,v=before.velocity,w=after.velocity;

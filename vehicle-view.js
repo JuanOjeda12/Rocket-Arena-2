@@ -1,7 +1,7 @@
 import {createCarCosmetics} from './car-cosmetics.js?v=final2';
 import * as T from './vendor/three.module.js';import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {carById,cleanProfile} from './catalog.js?v=final2';import {OCTANE_SCALE,OCTANE_FORWARD_OFFSET} from './proportions.js?v=inventory-20261028';
-import {createBoostVisual} from './boost-visual.js?v=rl-20261031';
+import {createBoostVisual} from './boost-visual.js?v=final2';
 const cache=new Map(),loader=new GLTFLoader();
 function source(spec){if(!cache.has(spec.id))cache.set(spec.id,loader.loadAsync(spec.path).then(g=>g.scene).catch(e=>{cache.delete(spec.id);throw e}));return cache.get(spec.id)}
 export function createVehicle(scene){

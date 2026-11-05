@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.js';
-import {arenaPerimeter} from './arena-shape.js?v=inventory-20261028';
+import {arenaPerimeter} from './arena-shape.js?v=final2';
 import {stadiumTime} from './stadium-time.js?v=inventory-20261028';
-import {createCrowd} from './crowd.js?v=rl-20261031c';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
-import {createAirTraffic} from './air-traffic.js?v=rl-20261031';
+import {createCrowd} from './crowd.js?v=final2';
+import {softGlow} from './boost-visual.js?v=final2';
+import {createAirTraffic} from './air-traffic.js?v=final2';
 
 // Static architecture is batched; the 2D crowd uses one instanced draw call.
 const unitBox=new T.BoxGeometry(1,1,1).toNonIndexed();
@@ -158,7 +158,8 @@ export function createStadium(scene,{sun,hemisphere,renderer}){
   if(zones?.length)crowd.forEach((p,i)=>{if(zones.some(z=>Math.hypot(p.x-z.x,p.z-z.z)<z.r))for(let k=0;k<12;k++)a[i*16+k]=0});
   mesh.instanceMatrix.needsUpdate=true;
  }
- return{update,crowdCount:crowd.length,crowdTriangles:spectators.triangles,power,maskCrowd};
+ function setDetail({crowd:keep=1,lights=true}={}){spectators.mesh.count=Math.round(crowd.length*keep);spectators.mesh.visible=keep>0;for(const l of stadiumLights)l.visible=lights}
+ return{update,crowdCount:crowd.length,crowdTriangles:spectators.triangles,power,maskCrowd,setDetail};
 }
 
 

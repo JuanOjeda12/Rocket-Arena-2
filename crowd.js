@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
+import {softGlow} from './boost-visual.js?v=final2';
 // One atlas, one plane per spectator, one instanced draw call. No 3D crowd bodies.
 export function createCrowd(scene,people){
  const colors=['#78b8ed','#edaa67','#9fc682','#db8499','#d9d5c4','#aa96d0','#64a8a8','#d8c268'];

@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
-import {ARENA,arenaPerimeter,floorRadius} from './arena-shape.js?v=inventory-20261028';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
+import {ARENA,arenaPerimeter,floorRadius} from './arena-shape.js?v=final2';
+import {softGlow} from './boost-visual.js?v=final2';
 // Decoración extra de la arena para acercarla a Rocket League: pintura del campo con zonas de
 // equipo, cortinas de luz en las paredes, redes y brillo en las porterías con carteles.
 // Es solo visual: no toca la física ni la geometría de colisión.

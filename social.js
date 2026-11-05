@@ -15,14 +15,14 @@ export class Social{
  async call(route,opts={}){try{return await this.acc.request(route,{...opts,token:opts.anon?null:await this.acc.token()})}catch(error){throw friendly(error)}}
  // ── Mi tarjeta pública ──
  body(){
-  const g=this.acc.data.garage,id=this.hub.identity,p=this.hub.progress,body={id:this.acc.user.id,name:g.name,frame:id.frame,banner:id.banner,level:levelInfo(p.xp).level};
+  const g=this.acc.data.garage,id=this.hub.identity,p=this.hub.progress,body={id:this.acc.user.id,name:g.name,frame:id.frame,banner:id.banner,level:levelInfo(p.xp).level};if(!this.noTitle)body.title=id.title&&id.title!=='title-none'?id.title:null;
   for(const list of PLAYLISTS){const r=p.ranked[list];body['mmr_'+list]=r.mmr;body['played_'+list]=r.played}
   return body;
  }
  queueSync(){clearTimeout(this.timer);if(!this.online)return;this.timer=setTimeout(()=>this.sync().catch(()=>{}),2500)}
  async sync(){
   if(!this.online)return;const body=this.body(),key=JSON.stringify(body);if(key===this.last)return;
-  await this.call('/rest/v1/public_profiles?on_conflict=id',{method:'POST',body});this.last=key;
+  try{await this.call('/rest/v1/public_profiles?on_conflict=id',{method:'POST',body})}catch(error){if(!this.noTitle&&/title|column|schema/i.test(error.message||'')){this.noTitle=true;delete body.title;await this.call('/rest/v1/public_profiles?on_conflict=id',{method:'POST',body})}else throw error}this.last=key;
  }
  // Trae el estado de mi foto (aprobada / pendiente / rechazada) y sube mis datos.
  async refreshMine(){
@@ -49,8 +49,9 @@ export class Social{
  async leaderboard(playlist){
   if(!this.acc.configured)throw Error('Las cuentas online aún no están configuradas.');
   const m='mmr_'+playlist,p='played_'+playlist;
-  const rows=await this.call(`/rest/v1/public_profiles?select=id,name,frame,banner,avatar,level,${m},${p}&${p}=gte.10&hidden=eq.false&order=${m}.desc&limit=50`,{anon:true});
-  return rows.map(r=>({id:r.id,name:r.name,frame:r.frame,banner:r.banner,avatar:validAvatar(r.avatar)?r.avatar:null,level:r.level,mmr:r[m],played:r[p]}));
+  const q=cols=>this.call(`/rest/v1/public_profiles?select=${cols}&${p}=gte.10&hidden=eq.false&order=${m}.desc&limit=50`,{anon:true});
+  let rows;try{rows=await q(`id,name,frame,banner,avatar,level,${this.noTitle?'':'title,'}${m},${p}`)}catch(error){if(!this.noTitle&&/title|column|schema/i.test(error.message||'')){this.noTitle=true;rows=await q(`id,name,frame,banner,avatar,level,${m},${p}`)}else throw error}
+  return rows.map(r=>({id:r.id,name:r.name,title:r.title||null,frame:r.frame,banner:r.banner,avatar:validAvatar(r.avatar)?r.avatar:null,level:r.level,mmr:r[m],played:r[p]}));
  }
  // ── Panel admin (la seguridad real está en las políticas de la base de datos) ──
  async adminPending(){
@@ -61,6 +62,39 @@ export class Social{
  }
  adminApproved(){return this.call('/rest/v1/public_profiles?avatar=not.is.null&select=id,name,avatar&order=updated_at.desc&limit=100')}
  adminPlayers(){return this.call('/rest/v1/public_profiles?select=id,name,hidden,mmr_1v1,mmr_2v2,mmr_3v3&order=updated_at.desc&limit=100')}
+ // ── Presencia (última vez visto / en línea / partido en vivo), órdenes del admin y cambios hechos por el admin ──
+ startBeat(){
+  this.stopBeat();if(!this.online||this.beatDead)return;let n=0;this.beatErrors=0;
+  const tick=async()=>{
+   if(!this.online){this.stopBeat();return}
+   const live=this.hub.liveProvider?.()||null;
+   try{
+    if(live||n%3===0)await this.call('/rest/v1/player_presence?on_conflict=user_id',{method:'POST',body:{user_id:this.acc.user.id,status:live?'playing':'menu',live}});
+    if(live||n%4===0)await this.pollCommands();
+    if(n%4===0)await this.checkAdminRev();
+    this.beatErrors=0;
+   }catch(error){if(/Falta activar|schema|PGRST|does not exist/i.test(error.message||'')&&++this.beatErrors>=3)this.stopBeat(true)}
+   n++;
+  };
+  tick();this.beatTimer=setInterval(tick,5000);
+ }
+ stopBeat(dead=false){clearInterval(this.beatTimer);this.beatTimer=null;if(dead)this.beatDead=true}
+ async pollCommands(){const uid=this.acc.user.id,cmds=await this.call(`/rest/v1/admin_commands?user_id=eq.${uid}&done=eq.false&select=id,kind,payload&order=id.asc&limit=10`);for(const c of cmds||[]){try{await this.hub.onCommand?.(c)}catch{}await this.call('/rest/v1/rpc/ack_command',{method:'POST',body:{cid:c.id}})}}
+ async checkAdminRev(){
+  const uid=this.acc.user.id,rows=await this.call(`/rest/v1/player_profiles?id=eq.${uid}&select=admin_rev`),rev=rows?.[0]?.admin_rev;if(rev==null)return;
+  if(this.seenRev==null||this.seenUid!==uid){this.seenRev=rev;this.seenUid=uid;return}
+  if(rev>this.seenRev){this.seenRev=rev;await this.acc.reloadRemote();this.hub.adopt();this.hub.onAdminChange?.()}
+ }
+ async pushMatch(e){if(!this.online)return;try{await this.call('/rest/v1/match_history',{method:'POST',body:{client_id:e.id,played_at:new Date(e.t||Date.now()).toISOString(),mode:e.mode,playlist:e.playlist||'',result:e.result,score_for:e.sf,score_against:e.sa,seconds:e.seconds,goals:e.goals,assists:e.assists,saves:e.saves,shots:e.shots,mmr_delta:e.delta,forfeit:!!e.forfeit}})}catch{}}
+ // Tienda: lo que el administrador excluyó del sorteo y lo que retiró de la tienda de hoy (lectura pública)
+ async shopConfig(){const rows=await this.call('/rest/v1/shop_config?select=excluded,removed&id=eq.1',{anon:true});return rows?.[0]||{excluded:[],removed:{}}}
+ adminSetShop(excl,rem){return this.call('/rest/v1/rpc/admin_set_shop',{method:'POST',body:{excl,rem}})}
+ adminListPlayers(){return this.call('/rest/v1/rpc/admin_list_players',{method:'POST',body:{}})}
+ adminAvatars(ids){return this.call('/rest/v1/rpc/admin_avatars',{method:'POST',body:{ids}})}
+ adminGetPlayer(target){return this.call('/rest/v1/rpc/admin_get_player',{method:'POST',body:{target}})}
+ adminSavePlayer(target,new_data,pub){return this.call('/rest/v1/rpc/admin_save_player',{method:'POST',body:{target,new_data,pub}})}
+ adminDeleteUser(target){return this.call('/rest/v1/rpc/admin_delete_user',{method:'POST',body:{target}})}
+ adminCommand(target,k,p){return this.call('/rest/v1/rpc/admin_send_command',{method:'POST',body:{target,k,p}})}
  review(target,approve,reason=null){return this.call('/rest/v1/rpc/admin_review_avatar',{method:'POST',body:{target,approve,reason}})}
  revoke(target){return this.call('/rest/v1/rpc/admin_revoke_avatar',{method:'POST',body:{target}})}
  setHidden(target,hide){return this.call('/rest/v1/rpc/admin_set_hidden',{method:'POST',body:{target,hide}})}

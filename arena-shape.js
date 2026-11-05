@@ -54,6 +54,21 @@ export function createArenaGeometry(){
   for(const x of [-G,G])quad([x,0,s*L],[x,0,s*B],[x,GH,s*B],[x,GH,s*L],[-Math.sign(x),0,0],'goal');
   quad([-G,GH,s*L],[G,GH,s*L],[G,GH,s*B],[-G,GH,s*B],[0,-1,0],'goal');
  }
+ // Interior goal edges are rounded (like Rocket League's goals) so a car entering at an angle slides instead of snagging on a 90° corner.
+ // Concave fillets only add surface; the original box walls remain behind them.
+ const RF=1.1,STEPS=8,add3=(a,b,k=1)=>[a[0]+b[0]*k,a[1]+b[1]*k,a[2]+b[2]*k];
+ const fillet=(E0,E1,nA,nB)=>{
+  const C=add3(add3([0,0,0],nA,RF),nB,RF),pts=[];
+  for(let k=0;k<=STEPS;k++){const t=k/STEPS*Math.PI/2,c=Math.cos(t),s=Math.sin(t);pts.push({o:[C[0]-RF*(c*nA[0]+s*nB[0]),C[1]-RF*(c*nA[1]+s*nB[1]),C[2]-RF*(c*nA[2]+s*nB[2])],n:[c*nA[0]+s*nB[0],c*nA[1]+s*nB[1],c*nA[2]+s*nB[2]]})}
+  for(let k=0;k<STEPS;k++){const p=pts[k],q=pts[k+1];quad(add3(E0,p.o),add3(E1,p.o),add3(E1,q.o),add3(E0,q.o),[p.n[0]+q.n[0],p.n[1]+q.n[1],p.n[2]+q.n[2]],'goal')}
+ };
+ for(const s of [-1,1])for(const x of [-1,1]){
+  const side=[-x,0,0],back=[0,0,-s],floor=[0,1,0],roof=[0,-1,0],ex=x*G;
+  fillet([ex,0,s*L],[ex,0,s*B],floor,side);                 // suelo / pared lateral
+  fillet([ex,GH,s*L],[ex,GH,s*B],roof,side);                // techo / pared lateral
+  fillet([ex,0,s*B],[ex,GH,s*B],side,back);                 // esquina vertical del fondo
+ }
+ for(const s of [-1,1]){fillet([-G,0,s*B],[G,0,s*B],[0,1,0],[0,0,-s]);fillet([-G,ARENA.goalHeight,s*B],[G,ARENA.goalHeight,s*B],[0,-1,0],[0,0,-s])}
  return{positions,indices,groups,perimeter};
 }
 

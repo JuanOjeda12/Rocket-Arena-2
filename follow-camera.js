@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {constrainArenaCamera} from './arena-shape.js?v=inventory-20261028';
+import {constrainArenaCamera} from './arena-shape.js?v=final2';
 
 // Rocket League-style camera rig. Distances are meters (100 game units = 1m).
 // The horizon and orbit heading are independent of the visual car's flip rotation.

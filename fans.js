@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
-import {arenaPerimeter} from './arena-shape.js?v=inventory-20261028';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
+import {arenaPerimeter} from './arena-shape.js?v=final2';
+import {softGlow} from './boost-visual.js?v=final2';
 // Aficionados en 3D SOLO para la cinemática de introducción: una tribuna azul y otra naranja.
 // Cada espectador es un huevito (como en Rocket League), sin ojos, que salta y se mece. En partida son planos 2D.
 const SKIN=[0xf1c9a5,0xd9a47c,0xb97a52,0x8a5a3a,0x5e3b26,0xffdcb8];

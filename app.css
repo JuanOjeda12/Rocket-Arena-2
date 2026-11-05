@@ -128,3 +128,96 @@ body[data-screen=podio] #front,body[data-screen=admin] #front{background:linear-
 .ctl-opt strong{font:800 24px 'Barlow Condensed',Arial;letter-spacing:.1em}.ctl-opt small{font-size:12px;line-height:1.4;color:#bcd2e2}
 .ctl-opt.current{outline:2px solid #6fd7f2}.ctl-opt em{position:absolute;top:8px;right:10px;font:700 9px Barlow,Arial;letter-spacing:.14em;font-style:normal;color:#6fd7f2}
 @media(max-width:600px){.ctl-options{grid-template-columns:1fr}}
+.gfx-panel{max-width:900px;margin:18px 0}.gfx-slider{margin:18px 6px 6px}.gfx-slider input[type=range]{width:100%;accent-color:#6fd7f2;cursor:pointer}
+.gfx-ticks{display:flex;justify-content:space-between;margin-top:6px;font:700 13px 'Barlow Condensed',Arial;letter-spacing:.12em;text-transform:uppercase;color:#7f9bb0}.gfx-ticks .on{color:#6fd7f2}
+.gfx-desc{margin:10px 0 14px;padding-left:20px;color:#cfe3f2;font-size:14px;line-height:1.7}
+.extras-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;max-width:900px;margin:16px 0}.extra-mode h2{margin:0 0 6px;font:800 28px 'Barlow Condensed',Arial;letter-spacing:.1em}.extra-sizes{display:flex;gap:8px;margin-top:12px}
+
+/* ───── Títulos en la ficha, selector de títulos y cartel de rango alcanzado ───── */
+.pcard .pc-title{display:block;font:700 .72em/1 'Barlow Condensed',Arial;letter-spacing:.16em;text-transform:uppercase;margin-bottom:.12em;text-shadow:0 .08em .18em #000c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard.has-title .pc-bar{height:3.3em}
+.pcard.has-title .pc-name{font-size:1.32em}
+.title-grid{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.id-opt.title-opt{flex-direction:row;padding:7px 12px;font:700 13px 'Barlow Condensed',Arial;letter-spacing:.1em}
+.id-preview-mini{margin:12px 0 4px;overflow:auto;padding:8px 2px 4px}
+#unlock-modal{z-index:70}
+.unlock-dialog{max-width:min(92vw,560px);text-align:center}.unlock-list{display:flex;flex-direction:column;gap:18px;margin:16px 0;max-height:56vh;overflow:auto;align-items:center}
+.unlock-item{display:flex;flex-direction:column;gap:10px;align-items:center}.unlock-item>b{font:800 18px 'Barlow Condensed',Arial;letter-spacing:.22em;color:#ffd35b}
+.unlock-list{overflow-x:hidden}.unlock-item{max-width:100%}
+
+/* orden de la ficha: arriba rango/MMR (transparente), en medio el nombre y abajo el título llamativo */
+.pcard .pc-sub{margin:0 0 .12em;opacity:.6;font-size:.7em;letter-spacing:.14em}
+.pcard .pc-title{margin:.14em 0 0;font:800 .95em/1 'Barlow Condensed',Arial;letter-spacing:.14em;text-shadow:0 0 .5em currentColor,0 .08em .2em #000c}
+.pcard.has-title .pc-bar{height:3.5em}
+.pcard.has-title .pc-name{font-size:1.28em}
+.pcard .pc-title{align-self:flex-start;background:#050a10d9;padding:.2em .7em;border:1px solid currentColor;border-radius:.25em;margin-top:.2em}.pcard.has-title .pc-bar{height:3.7em}
+/* orden final: nombre, título destacado y debajo el rango/MMR semitransparente */
+.pcard .pc-sub{margin:.14em 0 0;opacity:.62;font-size:.7em}.pcard.has-title .pc-bar{height:4em;padding-top:.15em;padding-bottom:.15em}.pcard.has-title .pc-name{font-size:1.2em}.pcard .pc-title{margin:.12em 0 0;padding:.1em .6em;font-size:.82em}
+/* título sin recuadro: solo texto de color (liso o degradado según la rareza) */
+.pcard .pc-title{background:none;border:0;padding:0;margin:.08em 0 0;border-radius:0;font:800 .98em/1.05 'Barlow Condensed',Arial;letter-spacing:.12em;text-shadow:none;filter:drop-shadow(0 .06em .12em #000b);align-self:flex-start;width:auto}
+.id-opt.title-opt{background:#0a1a26b0}
+#orbit-hint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:11;padding:7px 16px;font:600 12px 'Barlow Condensed',Arial;letter-spacing:.18em;text-transform:uppercase;color:#cfe3f2;background:#06121bb0;border-radius:99px;pointer-events:none}body[data-screen=garage] #front,body[data-screen=inventory] #front,body[data-screen=drop] #front{cursor:grab}
+
+/* ───── Panel admin de jugadores + historial de partidas ───── */
+.adm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:10px 0}.adm-bar input,.adm-bar select{min-width:200px;padding:9px 12px;background:#0a1a26;border:1px solid #94d1ff44;color:#eff7fc}
+.adm-players{display:flex;flex-direction:column;gap:8px;max-width:980px}.adm-row{display:flex;align-items:center;gap:16px;padding:8px 12px;background:#0a1a26b8;border-radius:8px;flex-wrap:wrap}
+.adm-card{flex:none}.adm-meta{flex:1;min-width:200px;display:flex;flex-direction:column;gap:3px}.adm-meta small{color:#9fb8c8}
+.adm-status{font:700 12px 'Barlow Condensed',Arial;letter-spacing:.12em;color:#9fb8c8}.adm-status.on{color:#5dff9c}.adm-dirty{margin-left:10px;color:#ffd35b;font:700 12px 'Barlow Condensed',Arial;letter-spacing:.12em}
+.adm-head{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin:8px 0 14px}.adm-head>div{display:flex;flex-direction:column;gap:4px}
+.adm-section{max-width:980px;margin:8px 0 70px}.adm-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.adm-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;font:700 11px 'Barlow Condensed',Arial;letter-spacing:.16em;color:#9fd8ff}.adm-field input,.adm-field select{padding:9px 11px;background:#0a1a26;border:1px solid #94d1ff44;color:#eff7fc;font:500 14px Barlow,Arial;letter-spacing:0}
+.adm-check{display:flex;gap:8px;align-items:center;margin:10px 0}.adm-rank{border:1px solid #94d1ff33;margin:0 0 12px;padding:8px 12px}.adm-rank legend{padding:0 6px;color:#ffd35b;font-weight:700}
+.adm-avatar img,.adm-noavatar{width:140px;height:140px;object-fit:cover;background:#000;border-radius:6px;display:grid;place-items:center;color:#7f9bb0;margin:8px 0}.adm-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.adm-items{display:flex;flex-direction:column;gap:6px;margin:8px 0}.adm-item-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:7px 10px;background:#0a1a26a8;border-radius:6px}.adm-item-row.owned{border-left:3px solid #5dff9c}.adm-item-row .dot{width:10px;height:10px;border-radius:50%}.adm-item-row small{color:#9fb8c8;flex:1;min-width:120px}
+.adm-chips{display:flex;flex-wrap:wrap;gap:6px}.adm-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 4px 3px 10px;background:#143b55;border-radius:99px;font-size:12px}.adm-chip button{padding:0 7px;border-radius:99px;min-width:0;line-height:1.5}
+.adm-add{display:flex;gap:8px}.adm-add select{padding:6px 8px;background:#0a1a26;border:1px solid #94d1ff44;color:#eff7fc}
+.adm-drops{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.adm-drop{display:flex;justify-content:space-between;align-items:center;padding:12px;background:#0a1a26a8;border-radius:6px}.adm-qty{display:inline-flex;align-items:center;gap:6px}.adm-qty input{width:70px;text-align:center;padding:6px;background:#0a1a26;border:1px solid #94d1ff44;color:#eff7fc}
+.adm-live{display:flex;flex-direction:column;gap:10px;max-width:900px}.adm-live-card{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:12px 14px;background:#0a1a26b8;border-radius:8px}.adm-live-card>div:first-child{flex:1;min-width:180px;display:flex;flex-direction:column}
+.adm-score{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:8px 0}.adm-score label{display:flex;flex-direction:column;gap:4px;font:700 11px 'Barlow Condensed',Arial;letter-spacing:.14em;color:#9fd8ff}.adm-score input{width:80px;padding:8px;background:#0a1a26;border:1px solid #94d1ff44;color:#eff7fc;text-align:center}
+.adm-info code{font-size:12px;color:#9fd8ff;word-break:break-all}
+.history-panel{max-width:900px}.history-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.history-row{display:grid;grid-template-columns:150px 80px 1fr;gap:4px 14px;align-items:center;padding:9px 14px;background:#0a1a26b8;border-radius:6px;border-left:4px solid #9fb8c8}.history-row.win{border-left-color:#5dff9c}.history-row.loss{border-left-color:#ff6f7f}
+.hr-result{font:800 14px 'Barlow Condensed',Arial;letter-spacing:.14em}.history-row.win .hr-result{color:#5dff9c}.history-row.loss .hr-result{color:#ff8a98}.hr-score{font:800 22px 'Barlow Condensed',Arial;text-align:center}.hr-mode{font:700 13px 'Barlow Condensed',Arial;letter-spacing:.12em;color:#9fd8ff}.hr-stats,.hr-date{grid-column:3;color:#9fb8c8}
+@media(max-width:700px){.history-row{grid-template-columns:1fr 70px}.hr-mode,.hr-stats,.hr-date{grid-column:1/-1}}
+
+/* ───── Tienda diaria y créditos ───── */
+.home-credits{margin-left:6px;padding:6px 14px;font:800 20px 'Barlow Condensed',Arial;letter-spacing:.08em;color:#8fe3ff;background:#06121bb0;border-radius:99px;white-space:nowrap}
+.shop-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;max-width:min(66vw,980px)}.shop-credits{padding:6px 18px;font:600 18px 'Barlow Condensed',Arial;letter-spacing:.1em;color:#8fe3ff;background:#06121bc0;border:1px solid #6fd7f255;border-radius:99px}.shop-credits b{font-size:30px;color:#fff}
+.shop-block{max-width:min(66vw,980px);margin:16px 0}.shop-block h2{margin:0 0 10px;font:800 22px 'Barlow Condensed',Arial;letter-spacing:.16em;color:#9fd8ff}.shop-timer{margin-left:14px;font:600 14px 'Barlow Condensed',Arial;letter-spacing:.1em;color:#ffd35b}
+.shop-featured{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.shop-daily{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.shop-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 10px 34px;min-height:190px;text-align:center;background:linear-gradient(180deg,color-mix(in srgb,var(--rarity) 22%,#0b2334),#0a1a28);border:1px solid color-mix(in srgb,var(--rarity) 55%,transparent);overflow:hidden}
+.shop-tile.big{min-height:230px}.shop-tile.chosen{outline:2px solid #fff}.shop-tile .st-cat{font:700 11px 'Barlow Condensed',Arial;letter-spacing:.16em;color:#fff9;text-transform:uppercase}
+.shop-tile .st-icon svg{width:84px;height:68px}.shop-tile.big .st-icon svg{width:120px;height:96px}.shop-tile b{font:800 17px 'Barlow Condensed',Arial;letter-spacing:.06em}.shop-tile small{color:var(--rarity);letter-spacing:.1em;text-transform:uppercase}
+.shop-tile .st-chip{font:700 10px Barlow,Arial;font-style:normal;letter-spacing:.12em;padding:2px 7px;background:#ffffffdd;color:#0b2334;border-radius:3px}
+.shop-tile .st-price{position:absolute;right:0;bottom:0;padding:5px 12px;font:800 16px 'Barlow Condensed',Arial;letter-spacing:.08em;background:#050a10d0;color:#8fe3ff;border-top-left-radius:8px}.shop-tile.owned{opacity:.6}.shop-tile.owned .st-price{color:#5dff9c}
+.shop-details{position:fixed;right:3vw;bottom:100px;width:min(27vw,330px);padding:16px;background:#071a28ee;border-top:3px solid var(--rarity);z-index:12}.shop-details h2{margin:2px 0 4px;font:800 28px 'Barlow Condensed',Arial}.shop-price{margin:10px 0;font:800 30px 'Barlow Condensed',Arial;color:#8fe3ff}.shop-details .primary{width:100%}
+.drop-credits{margin:6px 0;font:800 20px 'Barlow Condensed',Arial;letter-spacing:.1em;color:#8fe3ff}
+.adm-credits .adm-big{font:600 22px 'Barlow Condensed',Arial;color:#9fd8ff}.adm-credits .adm-big b{font-size:44px;color:#fff}.adm-item-row.removed{opacity:.5}
+@media(max-width:900px){.shop-block,.shop-head{max-width:100%}.shop-details{position:static;width:auto;margin:12px 0}.shop-featured{grid-template-columns:1fr}}
+
+/* ───── Inventario: DROPS en su propia fila, iconos 3D y textos de colores grandes ───── */
+.inventory-tabs button:last-child{flex:1 1 100%}
+.thumb-wrap{position:relative;display:block;width:100%;height:84px;margin:0 auto 2px}.thumb-wrap>svg{position:absolute;left:50%;top:50%;width:64px;height:52px;transform:translate(-50%,-50%);transition:opacity .25s}.thumb-wrap>svg.hide{opacity:0}
+.item-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .3s;filter:drop-shadow(0 4px 6px #0007)}.item-thumb.on{opacity:1}
+.item-card .color-count{display:block;margin-top:2px;font:800 18px/1.1 'Barlow Condensed',Arial;letter-spacing:.05em;color:#fff;text-transform:uppercase}
+.inventory-details .swatch-note{display:block;margin-top:6px;font:800 19px/1.2 'Barlow Condensed',Arial;letter-spacing:.05em;color:#fff}.inventory-details .swatch-note span{display:block;margin-top:3px;font:500 12px Barlow,Arial;letter-spacing:0;color:#bcd2e2}
+.shop-tile .st-icon{display:block;width:100%}.shop-tile .thumb-wrap{height:100px}.shop-tile.big .thumb-wrap{height:130px}.shop-tile .thumb-wrap>svg{width:84px;height:68px}
+
+/* ===== Panel admin visual: tarjetas con coche y foto ===== */
+.adm-pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;max-width:1180px;margin:10px 0}
+.adm-pcard{display:flex;flex-direction:column;gap:8px;padding:10px;background:linear-gradient(160deg,#10283aef,#081621ef);border:1px solid #2c516a;border-radius:12px;position:relative;transition:transform .15s,border-color .15s}
+.adm-pcard:hover{transform:translateY(-2px);border-color:#6fc3ff}.adm-pcard.online{border-color:#3fe08a;box-shadow:0 0 18px #3fe08a30}
+.adm-pcard-art{position:relative;min-height:150px;border-radius:8px;background:radial-gradient(ellipse at 70% 40%,#1e4a68 0,#0a1824 70%);overflow:hidden}
+.adm-pcard-id{position:absolute;left:4px;bottom:4px;transform:scale(.8);transform-origin:left bottom;max-width:92%}
+.adm-car{position:relative;display:block;width:100%;aspect-ratio:256/176;max-height:170px}.adm-car .item-thumb{object-fit:contain}.adm-pcard-art .adm-car{position:absolute;right:-6%;top:-4%;width:78%}
+.adm-car.empty{display:flex;align-items:center;justify-content:center;color:#6f8ea3;font-size:12px}
+.adm-car.mid{width:190px;flex:none}.adm-car.big{width:min(420px,100%);margin:0 auto}.adm-showcar{display:flex;justify-content:center;margin-bottom:10px;padding:8px;background:radial-gradient(ellipse at 50% 60%,#1e4a68 0,#0a1824 75%);border-radius:10px}
+.adm-more{display:block;margin:6px auto 14px}.adm-bar select{min-width:140px}
+.adm-thumb{position:relative;display:inline-block;width:64px;height:44px;flex:none;border-radius:6px;background:#06111a}.adm-thumb .item-thumb{position:absolute;inset:0}
+.adm-sel{display:flex;align-items:center;gap:8px}.adm-sel select{flex:1}
+
+/* ===== Casual / Competitivo: modos por bloques ===== */
+.mode-block{margin:4px 0 10px}.mode-block h2{font:700 24px 'Barlow Condensed',Arial;letter-spacing:.08em;margin:6px 0 2px;color:#dff3ff}.mode-block>.muted{margin:0 0 6px;font-size:13px}
+.mode-block .card-grid .mode-card{height:96px;min-height:0}.mode-block .card-grid .mode-card strong{font-size:26px}
+body[data-screen="casual"] #front,body[data-screen="competitive"] #front{padding-bottom:90px}
+.rank-mode{margin:10px 0 4px;color:#9fd8ff;letter-spacing:.1em}

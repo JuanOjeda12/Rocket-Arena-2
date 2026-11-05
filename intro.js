@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.js';
-import {createFans} from './fans.js?v=rl-20261031';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
+import {createFans} from './fans.js?v=final2';
+import {softGlow} from './boost-visual.js?v=final2';
 import {logoSVG} from './logo.js?v=rl-20261031';
 import {DemolitionFX} from './demolition-fx.js?v=demo1';
-import {FollowCamera} from './follow-camera.js?v=rl-20261031';
+import {FollowCamera} from './follow-camera.js?v=final2';
 import {createTutorialAudio} from './tutorial-audio.js?v=final2';
 // Introducción cinematográfica nocturna: los reflectores se encienden, los LED recorren la cancha,
 // los aficionados (en 3D, solo aquí) celebran y un Octane salta sobre la cámara hasta que aparece el logo.
@@ -81,12 +81,13 @@ function makeSign(scene){
  group.position.set(SIGN.x,SIGN.y,SIGN.z);scene.add(group);group.visible=false;return group;
 }
 // Partículas aditivas para fuegos artificiales y explosiones.
+let FXQ=1;   // calidad gráfica: proporción de partículas
 function makeBursts(scene){
  const N=1400,pos=new Float32Array(N*3),col=new Float32Array(N*3),vel=new Float32Array(N*3),life=new Float32Array(N),max=new Float32Array(N);let head=0;
  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));
  const pts=new T.Points(g,new T.PointsMaterial({map:softGlow(),size:.9,vertexColors:true,transparent:true,depthWrite:false,blending:T.AdditiveBlending,toneMapped:false,sizeAttenuation:true}));pts.frustumCulled=false;scene.add(pts);
  for(let i=0;i<N;i++)pos[i*3+1]=-999;
- return{pts,add(c,rgb,n,speed,ttl=1.6,spread=1){for(let k=0;k<n;k++){const i=head++%N,a=Math.random()*6.283,b=Math.acos(2*Math.random()-1),sp=speed*(.35+Math.random()*.65);pos.set(c,i*3);vel[i*3]=Math.sin(b)*Math.cos(a)*sp*spread;vel[i*3+1]=Math.cos(b)*sp;vel[i*3+2]=Math.sin(b)*Math.sin(a)*sp*spread;col.set(rgb,i*3);life[i]=max[i]=ttl*(.6+Math.random()*.6)}},
+ return{pts,add(c,rgb,n,speed,ttl=1.6,spread=1){n=Math.round(n*FXQ);for(let k=0;k<n;k++){const i=head++%N,a=Math.random()*6.283,b=Math.acos(2*Math.random()-1),sp=speed*(.35+Math.random()*.65);pos.set(c,i*3);vel[i*3]=Math.sin(b)*Math.cos(a)*sp*spread;vel[i*3+1]=Math.cos(b)*sp;vel[i*3+2]=Math.sin(b)*Math.sin(a)*sp*spread;col.set(rgb,i*3);life[i]=max[i]=ttl*(.6+Math.random()*.6)}},
   update(dt){for(let i=0;i<N;i++){if(life[i]<=0){pos[i*3+1]=-999;continue}life[i]-=dt;vel[i*3+1]-=7*dt;for(let j=0;j<3;j++)pos[i*3+j]+=vel[i*3+j]*dt;const f=Math.max(0,life[i]/max[i]);col[i*3]*=1-dt*.4;col[i*3+1]*=1-dt*.6;col[i*3+2]*=1-dt*.8;if(f<.25){col[i*3]*=f*4;col[i*3+1]*=f*4;col[i*3+2]*=f*4}}g.attributes.position.needsUpdate=true;g.attributes.color.needsUpdate=true},
   hide(){life.fill(0);for(let i=0;i<N;i++)pos[i*3+1]=-999;g.attributes.position.needsUpdate=true}};
 }
@@ -482,5 +483,5 @@ export function createIntro({scene,camera,renderer,stadium,vfx,createVehicle,aud
   vfx.begin(dt);for(const f of frameCars)vfx.car(f.state,f.a.root,{localSlot:0,boostRGB:f.a.boostRGB});vfx.update(dt,{streaks:frameCars.some(f=>f.a===B)});
   bursts?.update(dt);
  }
- return{preload,get debug(){return{idx,waiting,id:S[idx]?.id,shotT,endT}},get active(){return active},set hold(v){hold=v},start,update,skip:finish,bindPads(p,states){pads=p;padStates=states},seek(time,step=1/30){if(!active)return;const n=Math.max(0,Math.round((time-t)/step));for(let i=0;i<n;i++)update(step)},get time(){return t}};
+ return{preload,setQuality(L){FXQ=L.fx},get debug(){return{idx,waiting,id:S[idx]?.id,shotT,endT}},get active(){return active},set hold(v){hold=v},start,update,skip:finish,bindPads(p,states){pads=p;padStates=states},seek(time,step=1/30){if(!active)return;const n=Math.max(0,Math.round((time-t)/step));for(let i=0;i<n;i++)update(step)},get time(){return t}};
 }

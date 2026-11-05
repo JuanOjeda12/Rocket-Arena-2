@@ -1,49 +1,82 @@
-﻿SUBIR A GITHUB - PODIO, MARCOS/BANNERS POR RANGO Y BOTS NUEVOS
-===============================================================
+﻿SUBIR A GITHUB - FINAL 2 (modos con rango, tienda, panel admin visual, drops de un solo premio)
+=============================================================================================
 Sube el CONTENIDO de esta carpeta a la raiz de tu repositorio (respetando engine/necto, server y setup) y acepta reemplazar los archivos existentes.
 OPCIONAL: borra del repositorio ranked-brain.js y bot-humanizer.js (ya no se usan).
 
 DESPUES DE SUBIR:
-1) Supabase > SQL Editor: ejecuta setup/perfiles-publicos.sql (una sola vez). Sin esto el podio y las fotos no funcionan.
+1) Supabase > SQL Editor: ejecuta, una sola vez cada uno y en este orden: setup/perfiles-publicos.sql, setup/admin-total.sql, setup/tienda.sql y setup/admin-visual.sql (este ultimo muestra coches y fotos en el panel admin).
 2) Render: redespliega el ultimo commit si usas servidor online.
 3) Recarga con Ctrl+F5.
 4) Crea tu cuenta con juanojeda@e.correosanbartolo.edu.co y confirma el correo: esa cuenta es la administradora.
 
-ARCHIVOS (37):
+NOVEDADES: Heatseeker y Snow Day ahora estan en Casual y Competitivo (rango propio por modo y por 1v1/2v2/3v3, 10 partidas para encontrar rango, bots segun rango); cada drop da UN solo premio (objeto o creditos); iconos 3D de cada objeto suelto; explosiones de gol vistas de lado en la cancha; panel admin con tarjetas, coches y fotos.
+
+ARCHIVOS (68):
 accounts.js
+admin.js
+air-traffic.js
 app.css
 app.js
+arena-decor.js
+arena-shape.js
+arena-view.js
 ASSET-CREDITS.md
+ball-trail.js
 basic-bot.js
+boost-pads.js
+boost-visual.js
 bot-difficulty.js
 bot-profile.js
 BOTS-POR-RANGO.md
 car-cosmetics.js
 catalog.js
 controls.js
+crowd.js
 drop-stage.js
+engine\necto\necto.js
+engine\necto\necto.wasm
+engine\necto\weights.bin
+fans.js
+follow-camera.js
+fx-points.js
 game.js
+game-audio.js
+goal-contact.js
 goal-effects.js
+graphics.js
+history.js
 identity.js
 index.html
 intro.js
-inventory-ui.js
+inventory.css
 inventory.js
+inventory-ui.js
 item-catalog.js
+item-thumbs.js
+LEEME-ADMIN.md
 LEEME-PODIO.md
+LEEME-TIENDA.md
+LEEME-TITULOS-Y-RANGOS.md
 necto-controller.js
 necto-model.js
 nexto-controller.js
 opponent-ai.js
 player-hub.js
 progression.js
-simulation.js
-social.js
-tutorial-audio.js
-vehicle-view.js
-engine\necto\necto.js
-engine\necto\necto.wasm
-engine\necto\weights.bin
+render-budget.js
 server\index.mjs
 server\room-worker.mjs
+setup\admin-total.sql
+setup\admin-visual.sql
 setup\perfiles-publicos.sql
+setup\tienda.sql
+shop.js
+simulation.js
+social.js
+stadium.js
+surface-materials.js
+themes.js
+tutorial-audio.js
+vehicle-view.js
+vfx.js
+vfx-core.js

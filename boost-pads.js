@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
+import {softGlow} from './boost-visual.js?v=final2';
 
 // Las posiciones y la disponibilidad vienen siempre del motor de física, nunca de un
 // diseño decorativo aparte. Estilo Rocket League: placa hexagonal con luz naranja, haz de

@@ -2,10 +2,11 @@ import {cleanInventory,inventoryProfile} from './inventory.js?v=final2';
 import {ACCOUNT_CONFIG} from './account-config.js?v=inventory-20261028';
 import {cleanProgress,emptyProgress} from './progression.js?v=final2';
 import {cleanProfile} from './catalog.js?v=final2';
+import {cleanHistory} from './history.js?v=final2';
 import {cleanIdentity} from './identity.js?v=final2';
 const read=key=>{try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}};
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch{}};
-const normalize=data=>{const garage=cleanProfile(data?.garage||{}),inventory=cleanInventory(data?.inventory,garage.body);return{garage:inventoryProfile(garage,inventory),inventory,progress:cleanProgress(data?.progress||{}),controls:data?.controls||null,identity:cleanIdentity(data?.identity)}};
+const normalize=data=>{const garage=cleanProfile(data?.garage||{}),inventory=cleanInventory(data?.inventory,garage.body);return{garage:inventoryProfile(garage,inventory),inventory,progress:cleanProgress(data?.progress||{}),controls:data?.controls||null,identity:cleanIdentity(data?.identity),history:cleanHistory(data?.history),credits:Math.max(0,Math.min(1e9,Math.floor(Number(data?.credits)||0)))}};
 export function validAccountConfig(config){
  try{const url=new URL(config.url);if(url.protocol!=='https:'||url.username||url.password||!config.publishableKey||config.publishableKey.startsWith('sb_secret_'))return false;
   if(config.publishableKey.split('.').length===3){const jwt=JSON.parse(atob(config.publishableKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));if(jwt.role==='service_role')return false}return true;
@@ -58,6 +59,8 @@ export class AccountStore{
   if(cached?.dirty&&(!remote||cached.savedAt>Date.parse(remote.updated_at)))this.data=normalize(cached.data);
   this.dirty=!!cached?.dirty||!remote;write(this.key(),{data:this.data,dirty:this.dirty,savedAt:cached?.savedAt||Date.now()});write('rocket-new-profile:'+this.user.id,null);this.statusText(this.dirty?'Guardado local pendiente':'Sincronizado con tu cuenta');if(this.dirty)await this.flush();
  }
+ // Un administrador editó la cuenta: se adoptan sus datos (tienen prioridad sobre lo que hubiera sin sincronizar)
+ async reloadRemote(){const token=await this.token(),rows=await this.request('/rest/v1/player_profiles?id=eq.'+encodeURIComponent(this.user.id)+'&select=data,updated_at',{token});if(rows?.[0]){this.data=normalize(rows[0].data);this.dirty=false;write(this.key(),{data:this.data,dirty:false,savedAt:Date.now()});this.statusText('Actualizado por un administrador')}}
  async login(email,password){
   if(!this.user)write('rocket-player:guest',{data:this.data,dirty:false,savedAt:Date.now()});const guest=this.data;
   const s=await this.request('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}});this.user=s.user;this.saveSession(s);

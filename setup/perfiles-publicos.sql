@@ -21,6 +21,7 @@ create table if not exists public.public_profiles (
  name text not null default 'Jugador' check (char_length(name) between 1 and 24),
  frame text not null default 'frame-acero' check (char_length(frame) <= 32),
  banner text not null default 'banner-acero' check (char_length(banner) <= 32),
+ title text check (title is null or char_length(title) <= 40),
  avatar text check (avatar is null or (avatar like 'data:image/jpeg;base64,%' and octet_length(avatar) < 60000)),
  level int not null default 1 check (level between 1 and 100000),
  mmr_1v1 int not null default 400 check (mmr_1v1 between 0 and 2400),
@@ -36,8 +37,8 @@ alter table public.public_profiles enable row level security;
 revoke all on public.public_profiles from anon, authenticated;
 grant select on public.public_profiles to anon, authenticated;
 -- El jugador NO puede tocar "avatar" ni "hidden": solo el administrador, mediante las funciones de abajo.
-grant insert (id, name, frame, banner, level, mmr_1v1, mmr_2v2, mmr_3v3, played_1v1, played_2v2, played_3v3) on public.public_profiles to authenticated;
-grant update (id, name, frame, banner, level, mmr_1v1, mmr_2v2, mmr_3v3, played_1v1, played_2v2, played_3v3) on public.public_profiles to authenticated;
+grant insert (id, name, frame, banner, title, level, mmr_1v1, mmr_2v2, mmr_3v3, played_1v1, played_2v2, played_3v3) on public.public_profiles to authenticated;
+grant update (id, name, frame, banner, title, level, mmr_1v1, mmr_2v2, mmr_3v3, played_1v1, played_2v2, played_3v3) on public.public_profiles to authenticated;
 drop policy if exists "Ver podio" on public.public_profiles;
 create policy "Ver podio" on public.public_profiles for select to anon, authenticated
  using (not hidden or id = (select auth.uid()) or public.is_admin());
@@ -127,3 +128,8 @@ end $$;
 
 revoke all on function public.admin_review_avatar(uuid, boolean, text), public.admin_revoke_avatar(uuid), public.admin_set_hidden(uuid, boolean), public.remove_my_avatar() from public, anon;
 grant execute on function public.admin_review_avatar(uuid, boolean, text), public.admin_revoke_avatar(uuid), public.admin_set_hidden(uuid, boolean), public.remove_my_avatar() to authenticated;
+
+-- Si ya habias ejecutado este archivo antes de que existieran los titulos, ejecuta SOLO estas tres lineas:
+-- alter table public.public_profiles add column if not exists title text check (title is null or char_length(title) <= 40);
+-- grant insert (title) on public.public_profiles to authenticated;
+-- grant update (title) on public.public_profiles to authenticated;

@@ -1,17 +1,24 @@
 import {mmrBotSkill} from './bot-difficulty.js?v=final2';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const PLAYLISTS=['1v1','2v2','3v3'];
+// Heatseeker y Snow Day tienen sus propios rangos (uno por tamaño de equipo, como el fútbol normal): clave 'heatseeker-2v2'
+export const MODES=['heatseeker','snowday'];
+export const MODE_TITLE={heatseeker:'HEATSEEKER',snowday:'SNOW DAY'};
+export const ratingKey=(mode,playlist)=>MODES.includes(mode)?mode+'-'+playlist:playlist;
+export const RANK_KEYS=[...PLAYLISTS,...MODES.flatMap(m=>PLAYLISTS.map(p=>m+'-'+p))];
+export const keyLabel=k=>{const i=String(k).indexOf('-');return i<0?String(k):MODE_TITLE[k.slice(0,i)]+' '+k.slice(i+1)};
 export const RANKS=['Bronce','Plata','Oro','Platino','Diamante','Campeón','Gran Campeón','Leyenda Supersónica'];
 export const RANK_COLORS=['#c79568','#b9c9d7','#f4ca62','#75dde1','#559dff','#bc91ff','#ff777f','#f6e9ff'];
 const integer=(n,fallback=0)=>Number.isFinite(Number(n))?Math.max(0,Math.floor(Number(n))):fallback;
-export function emptyProgress(){return{version:1,xp:0,ranked:Object.fromEntries(PLAYLISTS.map(p=>[p,{mmr:400,played:0,wins:0,step:20}])),totals:{matches:0,wins:0,goals:0,assists:0,saves:0,shots:0},recent:[],pending:null,tutorial:false}}
+export function emptyProgress(){return{version:1,xp:0,ranked:Object.fromEntries(RANK_KEYS.map(p=>[p,{mmr:400,played:0,wins:0,step:20}])),totals:{matches:0,wins:0,goals:0,assists:0,saves:0,shots:0},recent:[],pending:null,tutorial:false,peak:-1}}
 export function cleanProgress(value={}){
  const p=emptyProgress();p.xp=integer(value.xp);
  for(const key of Object.keys(p.totals))p.totals[key]=integer(value.totals?.[key]);
- for(const list of PLAYLISTS){const r=value.ranked?.[list]||{};p.ranked[list]={mmr:clamp(integer(r.mmr,400),0,2400),played:integer(r.played),wins:integer(r.wins),step:clamp(integer(r.step,Math.floor(integer(r.mmr,400)/20)),0,84)}}
+ for(const list of RANK_KEYS){const r=value.ranked?.[list]||{};p.ranked[list]={mmr:clamp(integer(r.mmr,400),0,2400),played:integer(r.played),wins:integer(r.wins),step:clamp(integer(r.step,Math.floor(integer(r.mmr,400)/20)),0,84)}}
  p.tutorial=value.tutorial===true;
+ p.peak=Math.max(-1,Math.min(7,Math.floor(Number(value.peak))||-1));for(const list of RANK_KEYS){const ri=rankInfo(p.ranked[list]);if(ri.placed)p.peak=Math.max(p.peak,ri.family)}   // rango más alto alcanzado en cualquier modo (no baja nunca)
  p.recent=Array.isArray(value.recent)?value.recent.filter(id=>typeof id==='string').slice(-100):[];
- if(value.pending&&typeof value.pending.id==='string'&&['casual','competitive'].includes(value.pending.mode)&&PLAYLISTS.includes(value.pending.playlist))p.pending={...value.pending};
+ if(value.pending&&typeof value.pending.id==='string'&&['casual','competitive'].includes(value.pending.mode)&&RANK_KEYS.includes(value.pending.playlist))p.pending={...value.pending};
  return p;
 }
 export function rankInfo(record){
@@ -26,7 +33,7 @@ export function levelInfo(xp){let level=1,remaining=integer(xp);while(level<20){
 export const botSkill=record=>mmrBotSkill(record?.mmr??400);
 export function completeResult(value,result){
  const p=cleanProgress(value);if(p.recent.includes(result.id))return{progress:p,award:null};
- p.pending=null;if(!['casual','competitive'].includes(result.mode)||!PLAYLISTS.includes(result.playlist))return{progress:p,award:null};
+ p.pending=null;if(!['casual','competitive'].includes(result.mode)||!RANK_KEYS.includes(result.playlist))return{progress:p,award:null};
  const qualified=result.forfeit||result.seconds>=60;if(!qualified)return{progress:p,award:{xp:0,reason:'Completa al menos 60 segundos de partido para progresar.'}};
  p.recent.push(result.id);p.recent=p.recent.slice(-100);p.totals.matches++;if(result.won&&!result.forfeit)p.totals.wins++;
  const stats=result.stats||{};for(const key of ['goals','assists','saves','shots'])p.totals[key]+=integer(stats[key]);
@@ -37,5 +44,6 @@ export function completeResult(value,result){
   const raw=Math.min(84,Math.floor(mmr/20));record.step=record.played<=10||raw>record.step?raw:mmr<record.step*20-5?Math.min(84,Math.floor((mmr+5)/20)):record.step;
  }
  const active=integer(stats.touches)>0||integer(stats.points)>0,xp=result.forfeit||!active?0:Math.round(Math.min(1200,result.seconds)*4.5+100+(result.won?150:0)+(result.mvp?75:0)+Math.min(1000,integer(stats.points))*.1);
+ {const ra=rankInfo(record);if(ra.placed)p.peak=Math.max(p.peak,ra.family)}
  p.xp+=xp;return{progress:p,award:{xp,delta,levelBefore:beforeLevel.level,levelAfter:levelInfo(p.xp).level,rankBefore:beforeRank,rankAfter:rankInfo(record),ranked:result.mode==='competitive',forfeit:!!result.forfeit,reason:!active?'Sin XP: necesitas participar en el partido.':null}};
 }

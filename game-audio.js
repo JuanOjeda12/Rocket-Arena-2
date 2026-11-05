@@ -1,5 +1,5 @@
 // Original procedural effects. No recordings or assets from Rocket League.
-import {goalFrameHit} from './goal-contact.js?v=inventory-20261028';
+import {goalFrameHit} from './goal-contact.js?v=final2';
 export class GameAudio{
  constructor(){this.seen=new Set();this.previous=null;this.matchId=null;this.lastPhase='';try{this.muted=localStorage.getItem('rocket-audio-muted')==='true'}catch{this.muted=false}}
  async unlock(){try{if(!this.context){const C=globalThis.AudioContext||globalThis.webkitAudioContext;if(!C)return;const c=this.context=new C();this.master=c.createGain();this.master.gain.value=this.muted?0:.32;this.master.connect(c.destination);

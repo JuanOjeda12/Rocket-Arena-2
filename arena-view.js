@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
-import {ARENA,createArenaGeometry,floorRadius} from './arena-shape.js?v=inventory-20261028';
-import {metalMaterial,applyArenaUV} from './surface-materials.js?v=inventory-20261028';
+import {ARENA,createArenaGeometry,floorRadius} from './arena-shape.js?v=final2';
+import {metalMaterial,applyArenaUV} from './surface-materials.js?v=final2';
 export function addRoundedArena(scene){
  const data=createArenaGeometry(),geometry=new T.BufferGeometry();
  geometry.setAttribute('position',new T.Float32BufferAttribute(data.positions,3));

@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
-import {softGlow} from './boost-visual.js?v=rl-20261031';
-import {PointPool,SparkLines,RingPool,Ribbon,SkidMarks,SpeedStreaks,rgb,rand} from './vfx-core.js?v=rl-20261031';
+import {softGlow} from './boost-visual.js?v=final2';
+import {PointPool,SparkLines,RingPool,Ribbon,SkidMarks,SpeedStreaks,rgb,rand} from './vfx-core.js?v=final2';
 import {DemolitionFX} from './demolition-fx.js?v=demo1';
 // Efectos de conducción al estilo Rocket League: turbo, derrape con marcas y humo, velocidad
 // supersónica (estelas, onda de choque, partículas pegadas al suelo), saltos, aterrizajes,
@@ -126,6 +126,7 @@ export class VfxHub{
   this.sparks=new SparkLines(scene,{max:900});this.rings=new RingPool(scene,30);this.skid=new SkidMarks(scene);this.streaks=new SpeedStreaks(scene);
   this.cars=new Map();this.ballPrev=null;this.shake=0;this.dt=0;this.superLevel=0;this.local=null;
  }
+ setQuality(k){this.glow.keep=k;this.smoke.keep=k;this.sparks.keep=k}
  begin(dt){this.dt=dt;this.local=null}
  idle(dt){this.begin(dt);this.update(dt,{streaks:false})}
  car(car,root,{localSlot=-1,boostRGB=null}={}){
